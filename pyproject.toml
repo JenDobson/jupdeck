@@ -1,27 +1,31 @@
 # pyproject.toml
-[project]
+[tool.poetry]
 name = "notebook_summarizer"
 version = "0.1.0"
 description = "Summarize Jupyter notebooks into client-friendly reports"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "ruff>=0.3.0",
-    "pytest>=7.0.0"
-]
+packages = [{ include = "notebook_summarizer" }]
 
-[tool.setuptools.packages.find]
-where = ["notebook_summarizer"]
+[tool.poetry.dependencies]
+python = ">=3.9"
+ruff = ">=0.3.0"
+pytest = ">=7.0.0"
 
-[project.scripts]
+[tool.poetry.scripts]
 notebook-summarizer = "notebook_summarizer.cli:main"
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = []
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,5 @@
 """Example usage of the notebook summarizer API."""
-from notebook_summarizer.core import parser, summarizer, exporter
+from notebook_summarizer.core import exporter, parser, summarizer
 
 notebook_path = "../notebooks/demo_notebook.ipynb"
 cells = parser.extract_notebook_content(notebook_path)
