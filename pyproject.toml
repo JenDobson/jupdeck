@@ -1,0 +1,27 @@
+# pyproject.toml
+[project]
+name = "notebook_summarizer"
+version = "0.1.0"
+description = "Summarize Jupyter notebooks into client-friendly reports"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "ruff>=0.3.0",
+    "pytest>=7.0.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["notebook_summarizer"]
+
+[project.scripts]
+notebook-summarizer = "notebook_summarizer.cli:main"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
