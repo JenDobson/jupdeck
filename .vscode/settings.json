@@ -16,20 +16,26 @@
 
     "editor.tokenColorCustomizations": {
   
-    "textMateRules": [
+      "textMateRules": [
         {
           "scope": "keyword.other.table.toml",
           "settings": {
-          "foreground": "#ff79c6",
-          "fontStyle": "bold"
-        }
-      },
+            "foreground": "#ff79c6",
+            "fontStyle": "bold"
+          }
+        },
         {
           "scope": "string.quoted.double.toml",
           "settings": {
-          "foreground": "#50fa7b"
+            "foreground": "#50fa7b"
+          }
         }
-      }
-  ]
+      ]
+    },
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+      "tests"
+    ]
 }
-  }

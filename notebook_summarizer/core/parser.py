@@ -1,4 +1,52 @@
+# parser.py
 """Functions to parse .ipynb files."""
-def extract_notebook_content(notebook_path):
-    """Extract markdown and outputs from a Jupyter Notebook."""
-    pass
+
+from pathlib import Path
+from typing import Any, Dict, List
+
+import nbformat
+
+
+def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
+    """Load a Jupyter notebook from a file path."""
+    with notebook_path.open("r", encoding="utf-8") as f:
+        return nbformat.read(f, as_version=4)
+
+
+def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
+    """Extract relevant data from notebook cells in a structured format."""
+    cells = []
+    for cell in nb.cells:
+        if cell.cell_type == "markdown":
+            cells.append(
+                {
+                    "type": "markdown",
+                    "source": cell.source.strip(),
+                }
+            )
+        elif cell.cell_type == "code":
+            cells.append(
+                {"type": "code", "source": cell.source.strip(), "outputs": cell.get("outputs", [])}
+            )
+    return cells
+
+
+def parse_notebook(notebook_path: Path) -> Dict[str, Any]:
+    """Full notebook parsing pipeline."""
+    nb = load_notebook(notebook_path)
+    cell_data = extract_cells(nb)
+    return {"metadata": nb.metadata, "cells": cell_data}
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Parse a Jupyter notebook and print structured output."
+    )
+    parser.add_argument("notebook_path", type=Path, help="Path to the Jupyter .ipynb file")
+    args = parser.parse_args()
+
+    parsed = parse_notebook(args.notebook_path)
+    print(json.dumps(parsed, indent=2, ensure_ascii=False))
