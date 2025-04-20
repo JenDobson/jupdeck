@@ -15,20 +15,34 @@ def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
 
 def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
     """Extract relevant data from notebook cells in a structured format."""
-    cells = []
+    parsed = []
     for cell in nb.cells:
-        if cell.cell_type == "markdown":
-            cells.append(
-                {
-                    "type": "markdown",
-                    "source": cell.source.strip(),
-                }
-            )
-        elif cell.cell_type == "code":
-            cells.append(
-                {"type": "code", "source": cell.source.strip(), "outputs": cell.get("outputs", [])}
-            )
-    return cells
+        cell_type = cell.get("cell_type")
+        base = {
+            "type": cell_type,
+            "source": cell.source.strip(),
+            "outputs": [],
+        }
+        if cell_type == "code":
+            outputs = cell.get("outputs", [])
+            images = []
+            for output in outputs:
+                if output.get("output_type") == "display_data":
+                    img_data = output.get("data", {}).get("image/png")
+                    if img_data:
+                        images.append(
+                            {
+                                "mime_type": "image/png",
+                                "data": img_data,
+                            }
+                        )
+                base["outputs"].append(output)
+
+            if images:
+                base["images"] = images
+
+        parsed.append(base)
+    return parsed
 
 
 def parse_notebook(notebook_path: Path) -> Dict[str, Any]:

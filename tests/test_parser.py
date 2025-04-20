@@ -66,6 +66,30 @@ class TestNotebookOutputParsing:
         assert outputs[0]["output_type"] == "error"
         assert outputs[0]["ename"] == "ZeroDivisionError"
 
+    def test_parse_notebook_with_image_output(self, make_notebook):
+        # Minimal base64-encoded PNG (1x1 black pixel)
+        minimal_png = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgYA"
+            "AAAAMAAWgmWQ0AAAAASUVORK5CYII="
+        )
+        cell = new_code_cell(
+            source="plt.plot(x, y)",
+            execution_count=1,
+            outputs=[
+                {"output_type": "display_data", "data": {"image/png": minimal_png}, "metadata": {}}
+            ],
+        )
+        nb_content = new_notebook(cells=[cell])
+        path = make_notebook(nb_content, "image_output_notebook.ipynb")
+        result = parser.parse_notebook(path)
+        parsed_cell = result["cells"][0]
+
+        assert parsed_cell["type"] == "code"
+        assert "images" in parsed_cell
+        assert len(parsed_cell["images"]) == 1
+        assert parsed_cell["images"][0]["mime_type"] == "image/png"
+        assert parsed_cell["images"][0]["data"] == minimal_png
+
 
 class TestNotebookMarkdownParsing:
     def test_parse_notebook_with_nonstring_markdown(self, make_notebook):
