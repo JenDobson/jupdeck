@@ -59,7 +59,9 @@ poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
 - [ ] Move prose and notes to speaker notes
 - [ ] Optional PDF rendering
 - [ ] Group slides by sections / headings
-
+- [ ] Add unique cell IDs for database referencing
+- [ ] Store notebook-level metadata (author, kernel, timestamps)
+- [ ] Normalize parsed schema for chatbot-ready knowledge indexing
 ---
 
 ## 💡 Why?
