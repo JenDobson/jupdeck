@@ -54,9 +54,10 @@ poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
 
 - [x] Parse notebook structure and outputs
 - [x] Generate PowerPoint slide decks
-- [ ] Embed output graphics in slides
+- [x] Embed output graphics in slides
 - [ ] Convert markdown to bullet points
 - [ ] Move prose and notes to speaker notes
+- [ ] Summarize code with bullet points
 - [ ] Optional PDF rendering
 - [ ] Group slides by sections / headings
 - [ ] Add unique cell IDs for database referencing
