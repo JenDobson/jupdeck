@@ -1,6 +1,8 @@
 # renderer.py
 """Render parsed notebook content into a PowerPoint presentation."""
 
+import base64
+import io
 from pathlib import Path
 from typing import Any, Dict
 
@@ -43,6 +45,15 @@ class PowerPointRenderer:
         p = text_frame.paragraphs[0]
         p.text = content
         p.font.size = Pt(14)
+
+        # Render image(s) if present
+        for image in cell.get("images", []):
+            if image.get("mime_type") == "image/png" and image.get("data"):
+                image_data = base64.b64decode(image["data"])
+                image_stream = io.BytesIO(image_data)
+                slide.shapes.add_picture(
+                    image_stream, left, top + Inches(2.5), width=Inches(4), height=Inches(3)
+                )
 
 
 if __name__ == "__main__":
