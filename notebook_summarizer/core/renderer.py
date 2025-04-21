@@ -3,11 +3,21 @@
 
 import base64
 import io
+import re
 from pathlib import Path
 from typing import Any, Dict
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
+
+
+def clean_title_line(line: str) -> str:
+    """Strip # characters, normalize whitespace, and remove
+    trailing punctuation from a title line."""
+    line = re.sub(r"#", "", line)
+    line = re.sub(r"\s+", " ", line).strip()
+    line = re.sub(r"[:\.\-]+$", "", line)
+    return line.strip()
 
 
 class PowerPointRenderer:
@@ -28,7 +38,27 @@ class PowerPointRenderer:
     def _render_cell(self, index: int, cell: Dict[str, Any]):
         slide = self.prs.slides.add_slide(self.slide_layout)
         title_shape = slide.shapes.title
-        title_shape.text = f"Cell {index + 1} ({cell['type']})"
+
+        # Determine slide title
+        title = ""
+        if cell["type"] == "markdown":
+            lines = cell.get("source", "").splitlines()
+            if lines:
+                title = clean_title_line(lines[0])
+
+        elif cell["type"] == "code":
+            lines = cell.get("source", "").splitlines()
+            for line in lines:
+                if line.strip().startswith("#"):
+                    title = clean_title_line(line)
+                    break  # use the first comment line only
+
+        # Only set title if one was found
+        if title:
+            title_shape.text = title
+        else:
+            # Remove the placeholder if no title
+            slide.shapes._spTree.remove(title_shape._element)
 
         left = Inches(1)
         top = Inches(1.5)
