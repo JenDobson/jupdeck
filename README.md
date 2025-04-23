@@ -61,9 +61,10 @@ This roadmap outlines the phased development plan for the Notebook Summarizer to
 **Goal**: Prove core functionality—parse notebooks, summarize code, and render a working PowerPoint output with embedded graphics.
 
 **Features**:
-- [ ] Parse notebook structure and outputs (code, markdown, output cells)
-- [ ] Generate PowerPoint slide decks (`.pptx`)
-- [ ] Embed output graphics (e.g., plots, images) into slides
+- [x] Parse notebook structure and outputs (code, markdown, output cells)
+- [x] Generate PowerPoint slide decks (`.pptx`)
+- [x] Embed output graphics (e.g., plots, images) into slides
+- [ ] Embed output tables into slides
 - [ ] Summarize code cells using LLM into bullet points
 - [ ] Store basic notebook-level metadata (author, kernel, timestamps)
 - [ ] (Optional) Export to PDF via PowerPoint
