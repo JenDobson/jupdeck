@@ -52,16 +52,55 @@ poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
 
 ## 🛣️ Roadmap
 
-- [x] Parse notebook structure and outputs
-- [x] Generate PowerPoint slide decks
-- [ ] Embed output graphics in slides
-- [ ] Convert markdown to bullet points
-- [ ] Move prose and notes to speaker notes
-- [ ] Optional PDF rendering
-- [ ] Group slides by sections / headings
-- [ ] Add unique cell IDs for database referencing
-- [ ] Store notebook-level metadata (author, kernel, timestamps)
-- [ ] Normalize parsed schema for chatbot-ready knowledge indexing
+## Notebook Summarizer MVP Roadmap
+
+This roadmap outlines the phased development plan for the Notebook Summarizer tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
+
+### MVP-1: Core Technology Proof (Est. 56 hrs)
+
+**Goal**: Prove core functionality—parse notebooks, summarize code, and render a working PowerPoint output with embedded graphics.
+
+**Features**:
+- [x] Parse notebook structure and outputs (code, markdown, output cells)
+- [x] Generate PowerPoint slide decks (`.pptx`)
+- [x] Embed output graphics (e.g., plots, images) into slides
+- [ ] Embed output tables into slides
+- [ ] Summarize code cells using LLM into bullet points
+- [ ] Store basic notebook-level metadata (author, kernel, timestamps)
+- [ ] (Optional) Export to PDF via PowerPoint
+
+---
+
+### MVP-2: Differentiation Layer (Est. 60 hrs)
+
+**Goal**: Add features that differentiate the product from notebook-to-slide tools like Mercury, RISE, and Quarto.
+
+**Features**:
+- [ ] Templated intro/outro slides (e.g., executive summary, conclusions)
+- [ ] Slide layout/styling themes (corporate, academic, dark mode)
+- [ ] Slide format validation (e.g., image resolution, text overflow)
+- [ ] Normalize parsed output schema for chatbot-ready indexing
+- [ ] Export speaker notes as script/briefing document
+- [ ] UX toggle: “executive mode” (hide raw code, emphasize presentation)
+
+---
+
+### MVP-Pro: Polish & Scale (Est. 70 hrs)
+
+**Goal**: Add polish, user experience enhancements, and early ecosystem integrations to support broader adoption and reusability.
+
+**Features**:
+- [ ] Optional voiceover notes per slide (text-to-speech or speaker script sync)
+- [ ] Themed animations and transitions (PowerPoint-level polish)
+- [ ] Automated metrics (slide count, section coverage, etc.)
+- [ ] Drag-and-drop custom slide ordering (UI or slide map file)
+- [ ] Preset corporate themes (e.g., with logo, custom footer, fonts)
+- [ ] Export leads to CRM or newsletter integration
+
+---
+
+**Total Estimated Time**: ~186 hrs across all phases  
+**Cadence**: ~15 hrs/week over 3–4 months
 ---
 
 ## 💡 Why?
