@@ -102,3 +102,46 @@ def test_slide_title_from_code_comment_with_image(tmp_path):
     prs = Presentation(output_file)
     slide = prs.slides[0]
     assert slide.shapes.title.text == "This is the title"
+
+
+def test_render_small_table_inline(tmp_path):
+    parsed = {
+        "cells": [
+            {
+                "type": "code",
+                "source": "df.head()",
+                "table": {"data": [{"A": 1, "B": 2}, {"A": 3, "B": 4}]},
+            }
+        ],
+        "metadata": {},
+    }
+
+    output_file = tmp_path / "small_table.pptx"
+    renderer = PowerPointRenderer(output_file)
+    renderer.render(parsed)
+
+    prs = Presentation(output_file)
+    slide = prs.slides[0]
+    tables = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.TABLE]
+    assert tables, "Expected table to be rendered"
+    assert not any("truncated" in s.text for s in slide.shapes if s.has_text_frame)
+
+
+def test_render_large_table_with_link(tmp_path):
+    rows = [{"A": i, "B": i * 2} for i in range(20)]  # 20 rows = large
+    parsed = {
+        "cells": [
+            {"type": "code", "source": "df", "table": {"data": rows, "link_file": "full_data.xlsx"}}
+        ],
+        "metadata": {},
+    }
+
+    output_file = tmp_path / "large_table.pptx"
+    renderer = PowerPointRenderer(output_file)
+    renderer.render(parsed)
+
+    prs = Presentation(output_file)
+    slide = prs.slides[0]
+    textboxes = [s.text for s in slide.shapes if s.has_text_frame]
+    assert any("truncated" in text.lower() for text in textboxes)
+    assert any("cell_0_table_1.xlsx" in text for text in textboxes)

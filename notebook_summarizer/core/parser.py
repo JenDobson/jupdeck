@@ -16,9 +16,10 @@ def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
 def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
     """Extract relevant data from notebook cells in a structured format."""
     parsed = []
-    for cell in nb.cells:
+    for idx, cell in enumerate(nb.cells):
         cell_type = cell.get("cell_type")
         base = {
+            "index": idx,
             "type": cell_type,
             "source": cell.source.strip(),
             "outputs": [],

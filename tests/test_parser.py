@@ -17,6 +17,24 @@ def make_notebook(tmp_path):
     return _make
 
 
+class TestNotebookBaseParsing:
+    def test_parser_adds_index_to_cells(self, make_notebook):
+        nb_content = new_notebook(
+            cells=[
+                new_markdown_cell(source="# Title"),
+                new_code_cell(source="x = 1"),
+                new_code_cell(source="y = 2"),
+            ]
+        )
+        path = make_notebook(nb_content, "indexed_notebook.ipynb")
+        parser.nbformat.write(nb_content, path)
+
+        result = parser.parse_notebook(path)
+        indices = [cell.get("index") for cell in result["cells"]]
+
+        assert indices == [0, 1, 2], f"Expected indices [0, 1, 2], got {indices}"
+
+
 class TestNotebookOutputParsing:
     def test_parse_notebook_with_stdout_and_stderr(self, make_notebook):
         cell = new_code_cell(

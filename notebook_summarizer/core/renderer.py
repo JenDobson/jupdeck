@@ -7,7 +7,10 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
+import pandas as pd
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Inches, Pt
 
 
@@ -32,10 +35,10 @@ class PowerPointRenderer:
 
     def render(self, parsed: Dict[str, Any]):
         for i, cell in enumerate(parsed["cells"]):
-            self._render_cell(i, cell)
+            self._render_cell(cell)
         self.prs.save(self.output_path)
 
-    def _render_cell(self, index: int, cell: Dict[str, Any]):
+    def _render_cell(self, cell: Dict[str, Any]):
         slide = self.prs.slides.add_slide(self.slide_layout)
         title_shape = slide.shapes.title
 
@@ -84,6 +87,61 @@ class PowerPointRenderer:
                 slide.shapes.add_picture(
                     image_stream, left, top + Inches(2.5), width=Inches(4), height=Inches(3)
                 )
+
+        if "table" in cell:
+            self._render_table_to_slide(slide, cell["table"])
+
+    def _render_table_to_slide(self, slide, cell: dict):
+        rows = cell.get("data", [])
+
+        if not rows or not isinstance(rows, list):
+            return  # nothing to render
+
+        headers = list(rows[0].keys())
+        n_rows = len(rows)
+        n_cols = len(headers)
+
+        is_large = n_rows > 10 or n_cols > 6
+        link_file = None
+
+        # Limit number of rows shown if large
+        max_display_rows = 10 if is_large else n_rows
+        display_rows = rows[:max_display_rows]
+
+        # Add table shape
+        left = Inches(0.5)
+        top = Inches(1.5)
+        width = Inches(9)
+        height = Inches(5)
+
+        table_shape = slide.shapes.add_table(
+            len(display_rows) + 1, n_cols, left, top, width, height
+        ).table
+
+        # Header row
+        for col_idx, header in enumerate(headers):
+            table_shape.cell(0, col_idx).text = str(header)
+
+        # Data rows
+        for row_idx, row in enumerate(display_rows):
+            for col_idx, header in enumerate(headers):
+                table_shape.cell(row_idx + 1, col_idx).text = str(row.get(header, ""))
+
+        if is_large:
+            table_idx = len([s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.TABLE])
+            index = cell.get("index", 0)
+            link_file = f"cell_{index}_table_{table_idx}.xlsx"
+            xlsx_path = self.output_path.with_name(link_file)
+
+            textbox = slide.shapes.add_textbox(Inches(0.5), Inches(0.5), Inches(9), Inches(0.5))
+            text_frame = textbox.text_frame
+            text_frame.text = f"⚠️ Table truncated. See full data in '{link_file}'"
+            text_frame.paragraphs[0].font.size = Pt(12)
+            text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
+
+            df = pd.DataFrame(rows)
+
+            df.to_excel(xlsx_path, index=False)
 
 
 if __name__ == "__main__":
