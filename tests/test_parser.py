@@ -108,6 +108,41 @@ class TestNotebookOutputParsing:
         assert parsed_cell["images"][0]["mime_type"] == "image/png"
         assert parsed_cell["images"][0]["data"] == minimal_png
 
+    def test_parser_extracts_table_from_html_output(self, make_notebook):
+        # Simulate pandas DataFrame HTML output
+        html_table = """
+        <table>
+        <thead>
+            <tr><th>name</th><th>score</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Alice</td><td>95</td></tr>
+            <tr><td>Bob</td><td>88</td></tr>
+        </tbody>
+        </table>
+        """
+
+        cell = new_code_cell(
+            source="df.head()",
+            outputs=[
+                {
+                    "output_type": "execute_result",
+                    "data": {"text/html": html_table},
+                    "metadata": {},
+                    "execution_count": 1,
+                }
+            ],
+        )
+
+        nb_content = new_notebook(cells=[cell])
+        path = make_notebook(nb_content, "table_test.ipynb")
+        result = parser.parse_notebook(path)
+        parsed_cell = result["cells"][0]
+
+        assert "table" in parsed_cell
+        assert isinstance(parsed_cell["table"]["data"], list)
+        assert parsed_cell["table"]["data"][0] == {"name": "Alice", "score": 95}
+
 
 class TestNotebookMarkdownParsing:
     def test_parse_notebook_with_nonstring_markdown(self, make_notebook):

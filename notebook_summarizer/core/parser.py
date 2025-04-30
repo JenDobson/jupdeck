@@ -1,10 +1,12 @@
 # parser.py
 """Functions to parse .ipynb files."""
 
+import io
 from pathlib import Path
 from typing import Any, Dict, List
 
 import nbformat
+import pandas as pd
 
 
 def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
@@ -27,6 +29,7 @@ def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
         if cell_type == "code":
             outputs = cell.get("outputs", [])
             images = []
+            table = []
             for output in outputs:
                 if output.get("output_type") == "display_data":
                     img_data = output.get("data", {}).get("image/png")
@@ -37,10 +40,23 @@ def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
                                 "data": img_data,
                             }
                         )
+                    # Try to extract table from HTML output
+                html = output.get("data", {}).get("text/html")
+                if html and "<table" in html:
+                    try:
+                        dfs = pd.read_html(io.StringIO(html))
+                        if dfs:
+                            table = {"data": dfs[0].to_dict(orient="records")}
+                    except Exception:
+                        pass  # Silently ignore if read_html fails
+
                 base["outputs"].append(output)
 
             if images:
                 base["images"] = images
+
+            if table:
+                base["table"] = table
 
         parsed.append(base)
     return parsed
