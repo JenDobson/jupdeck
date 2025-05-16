@@ -13,7 +13,7 @@ packages = [{ include = "notebook_summarizer" }]
 # Main runtime dependencies
 # ------------------------
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = "^3.12"
 ipykernel = "*"
 jupyter_core = "^5.5.0"
 matplotlib = "*"
@@ -28,6 +28,7 @@ seaborn = "*"
 # ------------------------
 # CLI entry point
 # ------------------------
+scipy = "^1.15.3"
 [tool.poetry.scripts]
 notebook-summarizer = "notebook_summarizer.cli:main"
 
