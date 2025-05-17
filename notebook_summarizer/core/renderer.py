@@ -44,13 +44,13 @@ class PowerPointRenderer:
 
         # Determine slide title
         title = ""
-        if cell["type"] == "markdown":
+        if cell.type == "markdown":
             lines = cell.get("source", "").splitlines()
             if lines:
                 title = clean_title_line(lines[0])
 
-        elif cell["type"] == "code":
-            lines = cell.get("source", "").splitlines()
+        elif cell.type == "code":
+            lines = cell.code.splitlines()
             for line in lines:
                 if line.strip().startswith("#"):
                     title = clean_title_line(line)
@@ -68,7 +68,7 @@ class PowerPointRenderer:
         width = Inches(8)
         height = Inches(5)
 
-        content = cell.get("source", "")
+        content = cell.paragraphs + cell.bullets
         if isinstance(content, list):
             content = "".join(content)
 
@@ -80,7 +80,7 @@ class PowerPointRenderer:
         p.font.size = Pt(14)
 
         # Render image(s) if present
-        for image in cell.get("images", []):
+        for image in cell.images:
             if image.get("mime_type") == "image/png" and image.get("data"):
                 image_data = base64.b64decode(image["data"])
                 image_stream = io.BytesIO(image_data)
@@ -88,8 +88,8 @@ class PowerPointRenderer:
                     image_stream, left, top + Inches(2.5), width=Inches(4), height=Inches(3)
                 )
 
-        if "table" in cell:
-            self._render_table_to_slide(slide, cell["table"])
+        if cell.table:
+            self._render_table_to_slide(slide, cell.table)
 
     def _render_table_to_slide(self, slide, cell: dict):
         rows = cell.get("data", [])

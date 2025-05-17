@@ -3,6 +3,7 @@ import pytest
 from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
 from notebook_summarizer.core import parser
+from notebook_summarizer.core.models import ParsedCell
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ class TestNotebookBaseParsing:
         parser.nbformat.write(nb_content, path)
 
         result = parser.parse_notebook(path)
-        indices = [cell.get("index") for cell in result["cells"]]
+        indices = [cell.index for cell in result["cells"]]
 
         assert indices == [0, 1, 2], f"Expected indices [0, 1, 2], got {indices}"
 
@@ -48,7 +49,7 @@ class TestNotebookOutputParsing:
         nb_content = new_notebook(cells=[cell])
         path = make_notebook(nb_content, "stdout_stderr_output.ipynb")
         result = parser.parse_notebook(path)
-        outputs = result["cells"][0]["outputs"]
+        outputs = result["cells"][0].raw_outputs
         assert any(out.get("name") == "stdout" for out in outputs)
         assert any(out.get("name") == "stderr" for out in outputs)
 
@@ -57,8 +58,9 @@ class TestNotebookOutputParsing:
         nb_content = new_notebook(cells=[cell])
         path = make_notebook(nb_content, "empty_output_notebook.ipynb")
         result = parser.parse_notebook(path)
-        assert result["cells"][0]["type"] == "code"
-        assert result["cells"][0]["outputs"] == []
+        parsed_cell = result["cells"][0]
+        assert parsed_cell.type == "code"
+        assert not parsed_cell.raw_outputs
 
     def test_parse_notebook_with_error_output(self, make_notebook):
         cell = new_code_cell(
@@ -80,7 +82,8 @@ class TestNotebookOutputParsing:
         nb_content = new_notebook(cells=[cell])
         path = make_notebook(nb_content, "error_output_notebook.ipynb")
         result = parser.parse_notebook(path)
-        outputs = result["cells"][0]["outputs"]
+        parsed_cell = result["cells"][0]
+        outputs = parsed_cell.raw_outputs
         assert outputs[0]["output_type"] == "error"
         assert outputs[0]["ename"] == "ZeroDivisionError"
 
@@ -102,11 +105,11 @@ class TestNotebookOutputParsing:
         result = parser.parse_notebook(path)
         parsed_cell = result["cells"][0]
 
-        assert parsed_cell["type"] == "code"
-        assert "images" in parsed_cell
-        assert len(parsed_cell["images"]) == 1
-        assert parsed_cell["images"][0]["mime_type"] == "image/png"
-        assert parsed_cell["images"][0]["data"] == minimal_png
+        assert parsed_cell.type == "code"
+        assert parsed_cell.images
+        assert len(parsed_cell.images) == 1
+        assert parsed_cell.images[0].mime_type == "image/png"
+        assert parsed_cell.images[0].data == minimal_png
 
     def test_parser_extracts_table_from_html_output(self, make_notebook):
         # Simulate pandas DataFrame HTML output
@@ -139,9 +142,8 @@ class TestNotebookOutputParsing:
         result = parser.parse_notebook(path)
         parsed_cell = result["cells"][0]
 
-        assert "table" in parsed_cell
-        assert isinstance(parsed_cell["table"]["data"], list)
-        assert parsed_cell["table"]["data"][0] == {"name": "Alice", "score": 95}
+        assert parsed_cell.table[0] == {"name": "Alice", "score": 95}
+        assert parsed_cell.table[1] == {"name": "Bob", "score": 88}
 
 
 class TestNotebookMarkdownParsing:
@@ -150,5 +152,62 @@ class TestNotebookMarkdownParsing:
         nb_content = new_notebook(cells=[cell])
         path = make_notebook(nb_content, "nonstring_markdown.ipynb")
         result = parser.parse_notebook(path)
-        assert result["cells"][0]["type"] == "markdown"
-        assert "Heading Line 1" in result["cells"][0]["source"]
+        parsed_cell = result["cells"][0]
+        assert parsed_cell.type == "markdown"
+        assert "Heading Line 1" in parsed_cell.title
+        assert "More text on line 2" in parsed_cell.paragraphs[0]
+
+class TestCellParsing:
+    def test_parse_markdown_cell_heading_and_body(self):
+        md_text = """# Overview
+
+This notebook presents monthly trends in regional unemployment.
+"""
+
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell, index=0)
+
+        assert isinstance(parsed, ParsedCell)
+        assert parsed.index == 0
+        assert parsed.type == "markdown"
+        assert parsed.title == "Overview"
+        assert parsed.paragraphs == ["This notebook presents monthly trends in regional unemployment."]
+        assert parsed.bullets == []
+        assert parsed.code is None
+
+    def test_parse_markdown_cell_with_link(self):
+        md_text = """# Data Sources
+
+This analysis uses [BLS unemployment data](https://www.bls.gov/data/) for all calculations.
+"""
+
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell, index=1)
+
+        assert parsed.title == "Data Sources"
+        assert len(parsed.paragraphs) == 1
+
+        paragraph = parsed.paragraphs[0]
+        assert "BLS unemployment data" in paragraph
+        assert "https://www.bls.gov" in paragraph  # Confirm we're including the raw URL
+        assert "for all calculations" in paragraph
+
+    def test_parse_markdown_cell_with_bullets(self):
+        md_text = """# Key Findings
+
+- Unemployment fell in 8 of 10 regions
+- Tech sector shows 3% recovery
+- Seasonal adjustment applied to all series
+"""
+
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell, index=2)
+
+        assert isinstance(parsed, ParsedCell)
+        assert parsed.title == "Key Findings"
+        assert parsed.bullets == [
+            "Unemployment fell in 8 of 10 regions",
+            "Tech sector shows 3% recovery",
+            "Seasonal adjustment applied to all series"
+        ]
+        assert parsed.paragraphs == []  # No standalone paragraphs in this case

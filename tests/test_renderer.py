@@ -2,6 +2,7 @@ import pytest
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+from notebook_summarizer.core.models import ParsedCell
 from notebook_summarizer.core.renderer import PowerPointRenderer, clean_title_line
 
 
@@ -25,7 +26,7 @@ def test_clean_title_line_formats(raw, expected):
 
 def test_render_markdown_slide(tmp_path):
     parsed = {
-        "cells": [{"type": "markdown", "source": "### Hello world"}],
+        "cells": [ParsedCell(index=0,type="markdown", title="Hello world")],
         "metadata": {},
     }
     output_file = tmp_path / "test.pptx"
@@ -46,13 +47,9 @@ def test_render_code_cell_with_image(tmp_path):
     )
 
     parsed = {
-        "cells": [
-            {
-                "type": "code",
-                "source": "plt.plot(x, y)",
-                "images": [{"mime_type": "image/png", "data": minimal_png}],
-            }
-        ],
+        "cells": [ParsedCell(index=0,type="code", 
+                             code="plt.plot(x, y)",
+                             images=[{"mime_type": "image/png", "data": minimal_png}])],
         "metadata": {},
     }
     output_file = tmp_path / "code_with_image.pptx"
@@ -67,7 +64,7 @@ def test_render_code_cell_with_image(tmp_path):
 
 def test_render_code_cell_without_image(tmp_path):
     parsed = {
-        "cells": [{"type": "code", "source": "print('Hello')"}],
+        "cells": [ParsedCell(index=0,type="code",code="print('Hello')")],
         "metadata": {},
     }
     output_file = tmp_path / "code_no_image.pptx"
@@ -87,14 +84,14 @@ def test_slide_title_from_code_comment_with_image(tmp_path):
 
     parsed = {
         "cells": [
-            {
-                "type": "code",
-                "source": "# This is the title\nplt.plot(x, y)",
-                "images": [{"mime_type": "image/png", "data": minimal_png}],
-            }
-        ],
+            ParsedCell(index=0,
+                       type="code",
+                       title="This is the title",
+                       code="plt.plot(x, y)",
+                       images=[{"mime_type": "image/png", "data": minimal_png}])
+            ],
         "metadata": {},
-    }
+        }
     output_file = tmp_path / "comment_with_image.pptx"
     renderer = PowerPointRenderer(output_file)
     renderer.render(parsed)
@@ -106,13 +103,10 @@ def test_slide_title_from_code_comment_with_image(tmp_path):
 
 def test_render_small_table_inline(tmp_path):
     parsed = {
-        "cells": [
-            {
-                "type": "code",
-                "source": "df.head()",
-                "table": {"data": [{"A": 1, "B": 2}, {"A": 3, "B": 4}]},
-            }
-        ],
+        "cells": [ParsedCell(index=0,
+                             type="code",
+                             code="df.head()",
+                             table={"data": [{"A": 1, "B": 2}, {"A": 3, "B": 4}]})],
         "metadata": {},
     }
 
@@ -130,9 +124,10 @@ def test_render_small_table_inline(tmp_path):
 def test_render_large_table_with_link(tmp_path):
     rows = [{"A": i, "B": i * 2} for i in range(20)]  # 20 rows = large
     parsed = {
-        "cells": [
-            {"type": "code", "source": "df", "table": {"data": rows, "link_file": "full_data.xlsx"}}
-        ],
+        "cells": [ParsedCell(index=0,
+                             type="code",
+                             code="df",
+                             table={"data": rows, "link_file": "full_data.xlsx"})],
         "metadata": {},
     }
 
