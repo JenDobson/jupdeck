@@ -75,29 +75,41 @@ class PowerPointRenderer:
         width = Inches(9)
         height = Inches(5)
 
-        # Render paragraphs
-        paragraph_top = top
         paragraph_left = left
+        paragraph_top = top
         paragraph_width = Inches(5)
         paragraph_height = Inches(3)
-        for paragraph in cell.paragraphs:
+
+        paragraph_top = self._render_paragraphs(slide, cell.paragraphs, paragraph_left, paragraph_top, paragraph_width, paragraph_height)
+        paragraph_top = self._render_bullets(slide, cell.bullets, paragraph_left, paragraph_top, paragraph_width, paragraph_height)
+        paragraph_top = self._render_code(slide, cell.code, paragraph_left, paragraph_top, paragraph_width, paragraph_height)
+        self._render_images(slide, cell.images, left + width / 2, top, Inches(5), Inches(3))
+
+        if cell.table:
+            self._render_table_to_slide(slide, cell.table, cell.index)
+
+    def _render_paragraphs(self, slide, paragraphs, left, top, width, height):
+        paragraph_top = top
+        for paragraph in paragraphs:
             p = slide.shapes.add_textbox(
-                paragraph_left, paragraph_top, paragraph_width, paragraph_height
+                left, paragraph_top, width, height
                 ).text_frame.paragraphs[0]
             p.text = paragraph
             p.font.size = Pt(14)
             p.space_after = Pt(14)
             paragraph_top = paragraph_top + Inches(0.5)  # Move down for next paragraph
-    
-        # Render bullets
-        if cell.bullets:
+        return paragraph_top
+
+    def _render_bullets(self, slide, bullets, left, top, width, height):
+        paragraph_top = top
+        if bullets:
             bullet_box = slide.shapes.add_textbox(
-                paragraph_left, paragraph_top, paragraph_width, paragraph_height
+                left, paragraph_top, width, height
             )
             text_frame = bullet_box.text_frame
             text_frame.word_wrap = True
 
-            for i, bullet in enumerate(cell.bullets):
+            for i, bullet in enumerate(bullets):
                 if i == 0:
                     p = text_frame.paragraphs[0]  # Use the default paragraph
                 else:
@@ -111,17 +123,19 @@ class PowerPointRenderer:
                 p.bullet = True
                 
             paragraph_top += Inches(0.5)  # Move down to avoid overlap
+        return paragraph_top
 
-        # Render code
-        if cell.code:
+    def _render_code(self, slide, code, left, top, width, height):
+        paragraph_top = top
+        if code:
             code_box = slide.shapes.add_textbox(
-                paragraph_left, paragraph_top, paragraph_width, paragraph_height
+                left, paragraph_top, width, height
             )
             text_frame = code_box.text_frame
             text_frame.word_wrap = True
 
             p = text_frame.paragraphs[0]
-            p.text = cell.code
+            p.text = code
             p.font.size = Pt(12)
             p.font.name = "Courier New"
             p.font.bold = True
@@ -133,24 +147,18 @@ class PowerPointRenderer:
             fill = code_box.fill
             fill.solid()
             fill.fore_color.rgb = RGBColor(230, 230, 230)  # Light gray background
+        return paragraph_top
 
-        
-        # Render image(s) if present
+    def _render_images(self, slide, images, left, top, width, height):
         image_top = top
-        image_left = left + width / 2
-        image_width = Inches(5)
-        image_height = Inches(3)
-        for image in cell.images:
+        for image in images:
             if image.mime_type == "image/png" and image.data:
                 image_data = base64.b64decode(image.data)
                 image_stream = io.BytesIO(image_data)
                 slide.shapes.add_picture(
-                    image_stream, image_left, image_top, width=image_width, height=image_height
+                    image_stream, left, image_top, width=width, height=height
                 )
                 image_top = image_top + Inches(0.5)  # Move down for next image
-
-        if cell.table:
-            self._render_table_to_slide(slide, cell.table, cell.index)
 
     def _render_table_to_slide(self, slide, table_data: list, cell_index: int = 0):
 
