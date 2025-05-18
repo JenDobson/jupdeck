@@ -20,7 +20,7 @@ def main():
 
     # Render to PowerPoint
     ppt_renderer = renderer.PowerPointRenderer(output_path)
-    ppt_renderer.render(parsed)
+    ppt_renderer.render_presentation(parsed)
 
     print(f"✅ Report generated: {output_path}")
 

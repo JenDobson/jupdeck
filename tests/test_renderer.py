@@ -2,7 +2,7 @@ import pytest
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from notebook_summarizer.core.models import ParsedCell
+from notebook_summarizer.core.models import ImageData, ParsedCell
 from notebook_summarizer.core.renderer import PowerPointRenderer, clean_title_line
 
 
@@ -25,13 +25,10 @@ def test_clean_title_line_formats(raw, expected):
 
 
 def test_render_markdown_slide(tmp_path):
-    parsed = {
-        "cells": [ParsedCell(index=0,type="markdown", title="Hello world")],
-        "metadata": {},
-    }
+    parsed_cells = [ParsedCell(index=0, type="markdown", title="Hello world")]
     output_file = tmp_path / "test.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     assert output_file.exists()
 
@@ -46,15 +43,17 @@ def test_render_code_cell_with_image(tmp_path):
         "CAO+XZhEAAAAASUVORK5CYII="
     )
 
-    parsed = {
-        "cells": [ParsedCell(index=0,type="code", 
-                             code="plt.plot(x, y)",
-                             images=[{"mime_type": "image/png", "data": minimal_png}])],
-        "metadata": {},
-    }
+    parsed_cells = [
+        ParsedCell(
+            index=0,
+            type="code",
+            code="plt.plot(x, y)",
+            images=[ImageData(mime_type="image/png", data=minimal_png)]
+        )
+    ]
     output_file = tmp_path / "code_with_image.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     prs = Presentation(output_file)
     assert len(prs.slides) == 1
@@ -63,13 +62,10 @@ def test_render_code_cell_with_image(tmp_path):
 
 
 def test_render_code_cell_without_image(tmp_path):
-    parsed = {
-        "cells": [ParsedCell(index=0,type="code",code="print('Hello')")],
-        "metadata": {},
-    }
+    parsed_cells = [ParsedCell(index=0, type="code", code="print('Hello')")]
     output_file = tmp_path / "code_no_image.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     prs = Presentation(output_file)
     text_shapes = [s for s in prs.slides[0].shapes if s.has_text_frame]
@@ -82,19 +78,16 @@ def test_slide_title_from_code_comment_with_image(tmp_path):
         "AAAAC0lEQVR42mP8/x8AAwMCAO+XZhEAAAAASUVORK5CYII="
     )
 
-    parsed = {
-        "cells": [
-            ParsedCell(index=0,
-                       type="code",
-                       title="This is the title",
-                       code="plt.plot(x, y)",
-                       images=[{"mime_type": "image/png", "data": minimal_png}])
-            ],
-        "metadata": {},
-        }
+    parsed_cells = [
+        ParsedCell(index=0,
+                   type="code",
+                   title="This is the title",
+                   code="plt.plot(x, y)",
+                   images=[ImageData(mime_type="image/png",data=minimal_png)])
+    ]
     output_file = tmp_path / "comment_with_image.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     prs = Presentation(output_file)
     slide = prs.slides[0]
@@ -102,17 +95,14 @@ def test_slide_title_from_code_comment_with_image(tmp_path):
 
 
 def test_render_small_table_inline(tmp_path):
-    parsed = {
-        "cells": [ParsedCell(index=0,
-                             type="code",
-                             code="df.head()",
-                             table={"data": [{"A": 1, "B": 2}, {"A": 3, "B": 4}]})],
-        "metadata": {},
-    }
+    parsed_cells = [ParsedCell(index=0,
+                               type="code",
+                               code="df.head()",
+                               table=[{"A": 1, "B": 2}, {"A": 3, "B": 4}])]
 
     output_file = tmp_path / "small_table.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     prs = Presentation(output_file)
     slide = prs.slides[0]
@@ -122,21 +112,31 @@ def test_render_small_table_inline(tmp_path):
 
 
 def test_render_large_table_with_link(tmp_path):
-    rows = [{"A": i, "B": i * 2} for i in range(20)]  # 20 rows = large
-    parsed = {
-        "cells": [ParsedCell(index=0,
+    table_data = [{"A": i, "B": i * 2} for i in range(20)]  # 20 rows = large
+    parsed_cells = [ParsedCell(index=0,
                              type="code",
                              code="df",
-                             table={"data": rows, "link_file": "full_data.xlsx"})],
-        "metadata": {},
-    }
+                             table=table_data)]
 
     output_file = tmp_path / "large_table.pptx"
     renderer = PowerPointRenderer(output_file)
-    renderer.render(parsed)
+    renderer.render_slides(parsed_cells)
 
     prs = Presentation(output_file)
     slide = prs.slides[0]
     textboxes = [s.text for s in slide.shapes if s.has_text_frame]
     assert any("truncated" in text.lower() for text in textboxes)
     assert any("cell_0_table_1.xlsx" in text for text in textboxes)
+
+
+def test_render_raises_type_error_on_invalid_input(tmp_path):
+    from notebook_summarizer.core.renderer import PowerPointRenderer
+
+    output_file = tmp_path / "invalid_input.pptx"
+    renderer = PowerPointRenderer(output_file)
+
+    # Simulate a legacy cell (not a ParsedCell instance)
+    legacy_dict = {"metadata": {}, "cells": ["print('Hello')"]}
+
+    with pytest.raises(TypeError, match="ParsedCell"):
+        renderer.render_slides([legacy_dict])  # This should raise
