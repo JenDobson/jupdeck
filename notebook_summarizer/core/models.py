@@ -31,3 +31,34 @@ class ParsedCell:
     raw_outputs: Optional[List[Dict[str, Any]]] = None  # full outputs if needed
     metadata: Dict[str, Any] = field(default_factory=dict)  # magic commands, tags
 
+    def merge_cells(self, others: List["ParsedCell"]) -> "ParsedCell":
+        merged_bullets = self.bullets[:]
+        merged_paragraphs = self.paragraphs[:]
+        merged_images = self.images[:]
+        merged_raw_outputs = self.raw_outputs[:] if self.raw_outputs else []
+
+        final_table = self.table
+        for other in others:
+            merged_bullets.extend(other.bullets)
+            merged_paragraphs.extend(other.paragraphs)
+            merged_images.extend(other.images)
+            if other.raw_outputs:
+                merged_raw_outputs.extend(other.raw_outputs)
+            if not final_table and other.table:
+                final_table = other.table
+
+        merged_metadata = {**self.metadata}
+        for other in others:
+            merged_metadata.update({k: v for k, v in other.metadata.items() if k not in merged_metadata})
+
+        return ParsedCell(
+            type=self.type,
+            title=self.title,
+            bullets=merged_bullets,
+            paragraphs=merged_paragraphs,
+            code=self.code,
+            images=merged_images,
+            table=final_table,
+            raw_outputs=merged_raw_outputs,
+            metadata=merged_metadata
+        )
