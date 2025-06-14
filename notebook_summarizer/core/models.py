@@ -21,7 +21,6 @@ class SlideContent:
 
 @dataclass
 class ParsedCell:
-    index: int
     type: Literal["markdown", "code"]
     title: Optional[str] = None         # e.g., from markdown heading
     bullets: List[str] = field(default_factory=list)  # extracted from markdown

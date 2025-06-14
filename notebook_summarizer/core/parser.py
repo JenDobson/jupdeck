@@ -84,6 +84,9 @@ def parse_markdown_cell(cell) -> ParsedCell:
         if node["type"] == "heading" and node.get("attrs",{}).get("level") == 1 and not title:
             # Grab first H1 as title
             title = flatten_ast_as_text(node.get("children", []))
+        elif node["type"] == "heading" and node.get("attrs",{}).get("level") != 1:
+            # Grab first H1 as title
+            paragraphs.append(flatten_ast_as_text(node.get("children", [])))
         elif node["type"] == "paragraph":
             paragraphs.append(flatten_ast_as_text(node.get("children", [])))
         elif node["type"] == "list":

@@ -156,6 +156,22 @@ This notebook presents monthly trends in regional unemployment.
         assert parsed.bullets == []
         assert parsed.code is None
 
+    def test_parse_markdown_cell_l2heading_and_body(self):
+        md_text = """## Overview
+
+This notebook presents monthly trends in regional unemployment.
+"""
+
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell)
+
+        assert isinstance(parsed, ParsedCell)
+        assert parsed.type == "markdown"
+        assert parsed.title == None
+        assert parsed.paragraphs == ["Overview","This notebook presents monthly trends in regional unemployment."]
+        assert parsed.bullets == []
+        assert parsed.code is None
+
     def test_parse_markdown_cell_with_link(self):
         md_text = """# Data Sources
 
