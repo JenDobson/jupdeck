@@ -5,8 +5,11 @@ import io
 from pathlib import Path
 from typing import Any, Dict, List
 
+import mistune
 import nbformat
 import pandas as pd
+
+from notebook_summarizer.core.models import ImageData, ParsedCell
 
 
 def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
@@ -14,60 +17,106 @@ def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
     with notebook_path.open("r", encoding="utf-8") as f:
         return nbformat.read(f, as_version=4)
 
-
-def extract_cells(nb: nbformat.NotebookNode) -> List[Dict[str, Any]]:
-    """Extract relevant data from notebook cells in a structured format."""
-    parsed = []
-    for idx, cell in enumerate(nb.cells):
-        cell_type = cell.get("cell_type")
-        base = {
-            "index": idx,
-            "type": cell_type,
-            "source": cell.source.strip(),
-            "outputs": [],
-        }
-        if cell_type == "code":
-            outputs = cell.get("outputs", [])
-            images = []
-            table = []
-            for output in outputs:
-                if output.get("output_type") == "display_data":
-                    img_data = output.get("data", {}).get("image/png")
-                    if img_data:
-                        images.append(
-                            {
-                                "mime_type": "image/png",
-                                "data": img_data,
-                            }
-                        )
-                    # Try to extract table from HTML output
-                html = output.get("data", {}).get("text/html")
-                if html and "<table" in html:
-                    try:
-                        dfs = pd.read_html(io.StringIO(html))
-                        if dfs:
-                            table = {"data": dfs[0].to_dict(orient="records")}
-                    except Exception:
-                        pass  # Silently ignore if read_html fails
-
-                base["outputs"].append(output)
-
-            if images:
-                base["images"] = images
-
-            if table:
-                base["table"] = table
-
-        parsed.append(base)
-    return parsed
-
-
 def parse_notebook(notebook_path: Path) -> Dict[str, Any]:
     """Full notebook parsing pipeline."""
     nb = load_notebook(notebook_path)
     cell_data = extract_cells(nb)
     return {"metadata": nb.metadata, "cells": cell_data}
 
+def extract_cells(nb: nbformat.NotebookNode) -> List[ParsedCell]:
+    """Parse all notebook cells into a list of ParsedCell objects."""
+    parsed = []
+
+    for cell in nb.cells:
+        cell_type = cell.get("cell_type")
+
+        if cell_type == "markdown":
+            parsed_cell = parse_markdown_cell(cell)
+        elif cell_type == "code":
+            parsed_cell = parse_code_cell(cell)
+        else:
+            # Optionally skip or log unsupported cell types
+            continue
+
+        parsed.append(parsed_cell)
+        
+    return parsed
+
+
+
+def parse_code_cell(cell) -> ParsedCell:
+    outputs = cell.get("outputs", [])
+    images = []
+    table = None
+
+    for output in outputs:
+        if output.get("output_type") in ("display_data", "execute_result"):
+            img_data = output.get("data", {}).get("image/png")
+            if img_data:
+                images.append(ImageData(mime_type="image/png", data=img_data))
+
+            html = output.get("data", {}).get("text/html")
+            if html and "<table" in html:
+                try:
+                    dfs = pd.read_html(io.StringIO(html))
+                    if dfs:
+                        table = dfs[0].to_dict(orient="records")
+                except Exception:
+                    pass  # Silently ignore if read_html fails
+
+    return ParsedCell(
+        type="code",
+        code=cell.get("source", "").strip(),
+        images=images,
+        table=table,
+        raw_outputs=outputs,
+    )
+
+def parse_markdown_cell(cell) -> ParsedCell:
+    markdown = mistune.create_markdown(renderer="ast")
+    ast = markdown(cell.source)
+
+    title = None
+    bullets = []
+    paragraphs = []
+
+    for node in ast:
+        if node["type"] == "heading" and node.get("attrs",{}).get("level") == 1 and not title:
+            # Grab first H1 as title
+            title = flatten_ast_as_text(node.get("children", []))
+        elif node["type"] == "heading" and node.get("attrs",{}).get("level") != 1:
+            # Grab first H1 as title
+            paragraphs.append(flatten_ast_as_text(node.get("children", [])))
+        elif node["type"] == "paragraph":
+            paragraphs.append(flatten_ast_as_text(node.get("children", [])))
+        elif node["type"] == "list":
+            for item in node.get("children", []):
+                if item["type"] == "list_item":
+                    bullets.append(flatten_ast_as_text(item.get("children", [])))
+
+    return ParsedCell(
+        type="markdown",
+        title=title,
+        bullets=bullets,
+        paragraphs=paragraphs
+    )
+
+def flatten_ast_as_text(children):
+    parts = []
+    for child in children:
+        ctype = child.get("type")
+        if ctype == "text":
+            parts.append(child.get("raw", child.get("text", "")).strip())
+        elif ctype == "link":
+            label = flatten_ast_as_text(child.get("children", []))
+            url = child.get("attrs", {}).get("url", "")
+            parts.append(f"{label} ({url})")
+        elif ctype in ("paragraph", "block_text", "list_item", "strong", "emphasis"):
+            inner = flatten_ast_as_text(child.get("children", []))
+            parts.append(inner)
+        elif "children" in child:
+            parts.append(flatten_ast_as_text(child["children"]))
+    return " ".join(parts).strip()
 
 if __name__ == "__main__":
     import argparse

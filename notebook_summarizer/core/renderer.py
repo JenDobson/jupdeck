@@ -3,9 +3,9 @@
 
 import base64
 import io
-import re
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict
+from typing import List
 
 import pandas as pd
 from pptx import Presentation
@@ -13,106 +13,172 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Inches, Pt
 
-
-def clean_title_line(line: str) -> str:
-    """Strip # characters, normalize whitespace, and remove
-    trailing punctuation from a title line."""
-    line = re.sub(r"#", "", line)
-    line = re.sub(r"\s+", " ", line).strip()
-    line = re.sub(r"[:\.\-]+$", "", line)
-    return line.strip()
+from notebook_summarizer.core.models import ParsedCell
 
 
 class PowerPointRenderer:
-    def __init__(self, output_path: Path):
+
+    def __init__(self, output_path: Path | None = None):
         self.output_path = output_path
         self.prs = Presentation()
         self._set_default_layout()
 
     def _set_default_layout(self):
         # Use blank layout for full control
-        self.slide_layout = self.prs.slide_layouts[5]  # Title Only
+        self.slide_layout = self.prs.slide_layouts[1]  # Title and Content
 
-    def render(self, parsed: Dict[str, Any]):
-        for i, cell in enumerate(parsed["cells"]):
-            self._render_cell(cell)
-        self.prs.save(self.output_path)
+    def render_presentation(self, parsed_notebook: dict) -> None:
+        """
+        Render a parsed notebook dictionary into a PowerPoint presentation.
+        Expects a dict with keys 'metadata' and 'cells'.
+        """
+        if not isinstance(parsed_notebook, dict):
+            raise TypeError(f"parsed_notebook must be a dict, got {type(parsed_notebook).__name__}")
+        
+        parsed_cells = parsed_notebook.get("cells", [])
+        
+        if not isinstance(parsed_cells, list):
+            raise TypeError(f"'cells' must be a list, got {type(parsed_cells).__name__}")
+        
+        slide_groups = self._merge_slide_groups(parsed_cells)
 
-    def _render_cell(self, cell: Dict[str, Any]):
+        self.render_slides(slide_groups)
+
+        if self.output_path:
+            self.prs.save(self.output_path)
+
+    def _merge_slide_groups(self, parsed_cells: List[ParsedCell]) -> List[ParsedCell]:
+        """
+        Merge ParsedCells into logical slide groups based on heading structure.
+        A cell with a level-1 title starts a new slide; following cells are merged
+        into it until another level-1 is found.
+        """
+        if not parsed_cells:
+            return []
+
+        merged = []
+        current = None
+
+        for cell in parsed_cells:
+            if cell.type == "markdown" and cell.title:
+                if current:
+                    merged.append(current)
+                current = deepcopy(cell)
+            elif current:
+                current = current.merge_cells([cell])
+            else:
+                # Skip or accumulate into empty first slide
+                current = deepcopy(cell)
+
+        if current:
+            merged.append(current)
+
+        return merged
+
+    def render_slides(self, parsed_contents: List[ParsedCell]) -> None:
+        """
+        Render a list of ParsedCell objects into a PowerPoint presentation.
+        """
+        # Type check: ensure cells is a list of ParsedCell instances
+        if not isinstance(parsed_contents, list) or not \
+            all(isinstance(parsed_content, ParsedCell) for parsed_content in parsed_contents):
+            raise TypeError(
+                f"cells must be a list of ParsedCell instances, got "
+                f"{type(parsed_contents).__name__} with element types: "
+                f"{
+                    [type(parsed_content).__name__ for parsed_content in parsed_contents
+                     ] if isinstance(parsed_contents, list) else 'N/A'}"
+            )
+        
+        for parsed_content in parsed_contents:
+            self._render_parsed_contents(parsed_content)
+        
+        if self.output_path:
+            self.prs.save(self.output_path)
+
+    def _render_parsed_contents(self, parsed_content: ParsedCell):
         slide = self.prs.slides.add_slide(self.slide_layout)
+        
+        # 1: Set the title
         title_shape = slide.shapes.title
+        title_shape.text = parsed_content.title \
+            if parsed_content.title else ""
+        
+        # 2: Render bullets to placeholder content
+        self._render_bullets(slide, parsed_content)
 
-        # Determine slide title
-        title = ""
-        if cell["type"] == "markdown":
-            lines = cell.get("source", "").splitlines()
-            if lines:
-                title = clean_title_line(lines[0])
+        # 3: Write images
+        self._render_images(slide, parsed_content)
 
-        elif cell["type"] == "code":
-            lines = cell.get("source", "").splitlines()
-            for line in lines:
-                if line.strip().startswith("#"):
-                    title = clean_title_line(line)
-                    break  # use the first comment line only
+        # 4: Write tables
+        self._render_tables(slide, parsed_content)
 
-        # Only set title if one was found
-        if title:
-            title_shape.text = title
-        else:
-            # Remove the placeholder if no title
-            slide.shapes._spTree.remove(title_shape._element)
+        # 5: Write speaker notes
+        self._write_speaker_notes(slide, parsed_content)
+            
+
+    def _render_bullets(self, slide, parsed_content):
+
+        bullets = parsed_content.bullets
+
+        if bullets:
+            bullet_box = slide.placeholders[1]
+            text_frame = bullet_box.text_frame
+            text_frame.word_wrap = True
+
+            for i, bullet in enumerate(bullets):
+                if i == 0:
+                    p = text_frame.paragraphs[0]  # Use the default paragraph
+                else:
+                    p = text_frame.add_paragraph()
+
+                p.text = bullet
+                p.level = 0  # Top-level bullet
+                p.font.size = Pt(14)
+                p.space_after = Pt(6)
+                p.space_before = Pt(2)
+                p.bullet = True
+                
+    def _render_images(self, slide, parsed_content):
+
+        images = parsed_content.images
 
         left = Inches(1)
-        top = Inches(1.5)
-        width = Inches(8)
-        height = Inches(5)
+        top = Inches(4)
+        width = Inches(5)
+        height = Inches(3)
 
-        content = cell.get("source", "")
-        if isinstance(content, list):
-            content = "".join(content)
-
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = True
-        p = text_frame.paragraphs[0]
-        p.text = content
-        p.font.size = Pt(14)
-
-        # Render image(s) if present
-        for image in cell.get("images", []):
-            if image.get("mime_type") == "image/png" and image.get("data"):
-                image_data = base64.b64decode(image["data"])
+        for image in images:
+            if image.mime_type == "image/png" and image.data:
+                image_data = base64.b64decode(image.data)
                 image_stream = io.BytesIO(image_data)
                 slide.shapes.add_picture(
-                    image_stream, left, top + Inches(2.5), width=Inches(4), height=Inches(3)
+                    image_stream, left, top, width=width, height=height
                 )
+                left = left + Inches(3)  # Move right for next image
 
-        if "table" in cell:
-            self._render_table_to_slide(slide, cell["table"])
+    def _render_tables(self, slide, parsed_content):
 
-    def _render_table_to_slide(self, slide, cell: dict):
-        rows = cell.get("data", [])
-
-        if not rows or not isinstance(rows, list):
+        table_data_list = parsed_content.table
+        if not table_data_list or not isinstance(table_data_list, list):
             return  # nothing to render
 
-        headers = list(rows[0].keys())
-        n_rows = len(rows)
+        headers = list(table_data_list[0].keys())
+        n_rows = len(table_data_list)
         n_cols = len(headers)
 
         is_large = n_rows > 10 or n_cols > 6
         link_file = None
 
-        # Limit number of rows shown if large
+        # Limit number of table_data shown if large
         max_display_rows = 10 if is_large else n_rows
-        display_rows = rows[:max_display_rows]
+        display_rows = table_data_list[:max_display_rows]
 
         # Add table shape
-        left = Inches(0.5)
-        top = Inches(1.5)
-        width = Inches(9)
-        height = Inches(5)
+        left = Inches(1)
+        top = Inches(3)
+        width = Inches(8)
+        height = Inches(4)
 
         table_shape = slide.shapes.add_table(
             len(display_rows) + 1, n_cols, left, top, width, height
@@ -122,15 +188,15 @@ class PowerPointRenderer:
         for col_idx, header in enumerate(headers):
             table_shape.cell(0, col_idx).text = str(header)
 
-        # Data rows
+        # Data table_data
         for row_idx, row in enumerate(display_rows):
             for col_idx, header in enumerate(headers):
                 table_shape.cell(row_idx + 1, col_idx).text = str(row.get(header, ""))
 
         if is_large:
             table_idx = len([s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.TABLE])
-            index = cell.get("index", 0)
-            link_file = f"cell_{index}_table_{table_idx}.xlsx"
+            
+            link_file = f"slide_{slide.slide_id}_table_{table_idx}.xlsx"
             xlsx_path = self.output_path.with_name(link_file)
 
             textbox = slide.shapes.add_textbox(Inches(0.5), Inches(0.5), Inches(9), Inches(0.5))
@@ -139,10 +205,12 @@ class PowerPointRenderer:
             text_frame.paragraphs[0].font.size = Pt(12)
             text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
 
-            df = pd.DataFrame(rows)
+            df = pd.DataFrame(table_data_list)
 
             df.to_excel(xlsx_path, index=False)
 
+    def _write_speaker_notes(self,slide,parsed_content):
+        print("Implement!!")
 
 if __name__ == "__main__":
     import argparse
@@ -157,4 +225,4 @@ if __name__ == "__main__":
         parsed_notebook = json.load(f)
 
     renderer = PowerPointRenderer(args.output_pptx)
-    renderer.render(parsed_notebook)
+    renderer.render_presentation(parsed_notebook)

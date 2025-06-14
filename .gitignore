@@ -3,5 +3,5 @@ __pycache__/
 .env
 .venv/
 *.ipynb_checkpoints
-output/
+outputs/
 !outputs/demo.pptx
