@@ -49,7 +49,8 @@ class ParsedCell:
 
         merged_metadata = {**self.metadata}
         for other in others:
-            merged_metadata.update({k: v for k, v in other.metadata.items() if k not in merged_metadata})
+            merged_metadata.update(
+                {k: v for k, v in other.metadata.items() if k not in merged_metadata})
 
         return ParsedCell(
             type=self.type,
