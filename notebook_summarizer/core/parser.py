@@ -27,13 +27,13 @@ def extract_cells(nb: nbformat.NotebookNode) -> List[ParsedCell]:
     """Parse all notebook cells into a list of ParsedCell objects."""
     parsed = []
 
-    for idx, cell in enumerate(nb.cells):
+    for cell in nb.cells:
         cell_type = cell.get("cell_type")
 
         if cell_type == "markdown":
-            parsed_cell = parse_markdown_cell(cell, index=idx)
+            parsed_cell = parse_markdown_cell(cell)
         elif cell_type == "code":
-            parsed_cell = parse_code_cell(cell, index=idx)
+            parsed_cell = parse_code_cell(cell)
         else:
             # Optionally skip or log unsupported cell types
             continue
@@ -44,7 +44,7 @@ def extract_cells(nb: nbformat.NotebookNode) -> List[ParsedCell]:
 
 
 
-def parse_code_cell(cell, index: int) -> ParsedCell:
+def parse_code_cell(cell) -> ParsedCell:
     outputs = cell.get("outputs", [])
     images = []
     table = None
@@ -65,7 +65,6 @@ def parse_code_cell(cell, index: int) -> ParsedCell:
                     pass  # Silently ignore if read_html fails
 
     return ParsedCell(
-        index=index,
         type="code",
         code=cell.get("source", "").strip(),
         images=images,
@@ -73,7 +72,7 @@ def parse_code_cell(cell, index: int) -> ParsedCell:
         raw_outputs=outputs,
     )
 
-def parse_markdown_cell(cell, index: int) -> ParsedCell:
+def parse_markdown_cell(cell) -> ParsedCell:
     markdown = mistune.create_markdown(renderer="ast")
     ast = markdown(cell.source)
 
@@ -93,39 +92,11 @@ def parse_markdown_cell(cell, index: int) -> ParsedCell:
                     bullets.append(flatten_ast_as_text(item.get("children", [])))
 
     return ParsedCell(
-        index=index,
         type="markdown",
         title=title,
         bullets=bullets,
         paragraphs=paragraphs
     )
-"""
-def get_bullets_from_ast(ast_node):
-    bullets = []
-    for node in ast_node:
-        if node["type"] == "list":
-            for item in node["children"]:
-                # Recurse over children
-                for child in item.get("children",[]):
-                    if child["type"] in ("paragraph", "block_text", "list_item"):
-                        bullet_text = flatten_ast_as_text(child.get("children",[]))
-                    else:
-                        # Fallback in case item is directly text or link
-                        bullet_text = flatten_ast_as_text(child)
-                if bullet_text:
-                    bullets.append(bullet_text)
-    return bullets
-
-def get_bullets_from_ast(ast_node):
-    bullets = []
-    for node in ast_node:
-        if node["type"] == "list":
-            for item in node["children"]:
-                bullet_text = flatten_ast_as_text(child.get("children",[]))
-                if bullet_text:
-                    bullets.append(bullet_text)
-    return bullets
-"""
 
 def flatten_ast_as_text(children):
     parts = []

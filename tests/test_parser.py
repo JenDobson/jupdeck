@@ -17,25 +17,6 @@ def make_notebook(tmp_path):
 
     return _make
 
-
-class TestNotebookBaseParsing:
-    def test_parser_adds_index_to_cells(self, make_notebook):
-        nb_content = new_notebook(
-            cells=[
-                new_markdown_cell(source="# Title"),
-                new_code_cell(source="x = 1"),
-                new_code_cell(source="y = 2"),
-            ]
-        )
-        path = make_notebook(nb_content, "indexed_notebook.ipynb")
-        parser.nbformat.write(nb_content, path)
-
-        result = parser.parse_notebook(path)
-        indices = [cell.index for cell in result["cells"]]
-
-        assert indices == [0, 1, 2], f"Expected indices [0, 1, 2], got {indices}"
-
-
 class TestNotebookOutputParsing:
     def test_parse_notebook_with_stdout_and_stderr(self, make_notebook):
         cell = new_code_cell(
@@ -166,10 +147,9 @@ This notebook presents monthly trends in regional unemployment.
 """
 
         cell = new_markdown_cell(source=md_text)
-        parsed = parser.parse_markdown_cell(cell, index=0)
+        parsed = parser.parse_markdown_cell(cell)
 
         assert isinstance(parsed, ParsedCell)
-        assert parsed.index == 0
         assert parsed.type == "markdown"
         assert parsed.title == "Overview"
         assert parsed.paragraphs == ["This notebook presents monthly trends in regional unemployment."]
@@ -183,7 +163,7 @@ This analysis uses [BLS unemployment data](https://www.bls.gov/data/) for all ca
 """
 
         cell = new_markdown_cell(source=md_text)
-        parsed = parser.parse_markdown_cell(cell, index=1)
+        parsed = parser.parse_markdown_cell(cell)
 
         assert parsed.title == "Data Sources"
         assert len(parsed.paragraphs) == 1
@@ -202,7 +182,7 @@ This analysis uses [BLS unemployment data](https://www.bls.gov/data/) for all ca
 """
 
         cell = new_markdown_cell(source=md_text)
-        parsed = parser.parse_markdown_cell(cell, index=2)
+        parsed = parser.parse_markdown_cell(cell)
 
         assert isinstance(parsed, ParsedCell)
         assert parsed.title == "Key Findings"
@@ -226,7 +206,7 @@ With another paragraph at the end
 """
             
         cell = new_markdown_cell(source = md_text)
-        parsed = parser.parse_markdown_cell(cell,index=2)
+        parsed = parser.parse_markdown_cell(cell)
 
         assert isinstance(parsed, ParsedCell)
         assert parsed.title == "Introduction"
@@ -249,7 +229,7 @@ With another paragraph at the end
 """
 
         cell = new_markdown_cell(source=md_text)
-        parsed = parser.parse_markdown_cell(cell, index=3)
+        parsed = parser.parse_markdown_cell(cell)
 
         assert isinstance(parsed, ParsedCell)
         assert parsed.title == "Data Source"
@@ -259,3 +239,18 @@ With another paragraph at the end
             "More info at OECD (https://www.oecd.org/)"
         ]
         assert parsed.paragraphs == []
+
+
+    def test_parse_markdown_cell_with_directives(self):
+        md_text = """
+<!-- slide: new-->
+# Sample Analysis Notebook
+This notebook demonstrates a basic data analysis workflow using Python. We'll begin by exploring a sample dataset, visualizing the raw data, and performing a linear regression analysis to uncover trends.
+"""
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell)
+
+        assert parsed.title == "Sample Analysis Notebook"
+        assert parsed.paragraphs == [
+            "This notebook demonstrates a basic data analysis workflow using Python. We'll begin by exploring a sample dataset, visualizing the raw data, and performing a linear regression analysis to uncover trends."
+        ]
