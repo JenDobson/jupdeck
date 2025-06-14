@@ -157,6 +157,7 @@ class TestNotebookMarkdownParsing:
         assert "Heading Line 1" in parsed_cell.title
         assert "More text on line 2" in parsed_cell.paragraphs[0]
 
+
 class TestCellParsing:
     def test_parse_markdown_cell_heading_and_body(self):
         md_text = """# Overview
@@ -211,3 +212,50 @@ This analysis uses [BLS unemployment data](https://www.bls.gov/data/) for all ca
             "Seasonal adjustment applied to all series"
         ]
         assert parsed.paragraphs == []  # No standalone paragraphs in this case
+
+    def test_parse_markdown_cell_with_paragraphs_and_bullets(self):
+        md_text = """# Introduction
+
+This notebook demonstrates parsing.
+
+* Bullet 1
+* Bullet 2
+* Bullet 3
+
+With another paragraph at the end
+"""
+            
+        cell = new_markdown_cell(source = md_text)
+        parsed = parser.parse_markdown_cell(cell,index=2)
+
+        assert isinstance(parsed, ParsedCell)
+        assert parsed.title == "Introduction"
+        assert parsed.bullets == [
+            "Bullet 1",
+            "Bullet 2",
+            "Bullet 3"
+        ]
+        assert parsed.paragraphs == [
+            "This notebook demonstrates parsing.",
+            "With another paragraph at the end"
+        ]  # No standalone paragraphs in this case
+
+    def test_parse_markdown_cell_with_bullets_and_links(self):
+        md_text = """# Data Source
+
+- Summary statistics available
+- See [BLS](https://bls.gov) for details
+- More info at [OECD](https://www.oecd.org/)
+"""
+
+        cell = new_markdown_cell(source=md_text)
+        parsed = parser.parse_markdown_cell(cell, index=3)
+
+        assert isinstance(parsed, ParsedCell)
+        assert parsed.title == "Data Source"
+        assert parsed.bullets == [
+            "Summary statistics available",
+            "See BLS (https://bls.gov) for details",
+            "More info at OECD (https://www.oecd.org/)"
+        ]
+        assert parsed.paragraphs == []

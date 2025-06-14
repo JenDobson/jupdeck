@@ -23,7 +23,6 @@ def parse_notebook(notebook_path: Path) -> Dict[str, Any]:
     cell_data = extract_cells(nb)
     return {"metadata": nb.metadata, "cells": cell_data}
 
-
 def extract_cells(nb: nbformat.NotebookNode) -> List[ParsedCell]:
     """Parse all notebook cells into a list of ParsedCell objects."""
     parsed = []
@@ -85,13 +84,13 @@ def parse_markdown_cell(cell, index: int) -> ParsedCell:
     for node in ast:
         if node["type"] == "heading" and node.get("attrs",{}).get("level") == 1 and not title:
             # Grab first H1 as title
-            title = extract_text_from_children(node.get("children", []))
+            title = flatten_ast_as_text(node.get("children", []))
         elif node["type"] == "paragraph":
-            paragraphs.append(extract_text_from_children(node.get("children", [])))
+            paragraphs.append(flatten_ast_as_text(node.get("children", [])))
         elif node["type"] == "list":
             for item in node.get("children", []):
                 if item["type"] == "list_item":
-                    bullets.append(extract_text_from_children(item.get("children", [])))
+                    bullets.append(flatten_ast_as_text(item.get("children", [])))
 
     return ParsedCell(
         index=index,
@@ -100,18 +99,49 @@ def parse_markdown_cell(cell, index: int) -> ParsedCell:
         bullets=bullets,
         paragraphs=paragraphs
     )
+"""
+def get_bullets_from_ast(ast_node):
+    bullets = []
+    for node in ast_node:
+        if node["type"] == "list":
+            for item in node["children"]:
+                # Recurse over children
+                for child in item.get("children",[]):
+                    if child["type"] in ("paragraph", "block_text", "list_item"):
+                        bullet_text = flatten_ast_as_text(child.get("children",[]))
+                    else:
+                        # Fallback in case item is directly text or link
+                        bullet_text = flatten_ast_as_text(child)
+                if bullet_text:
+                    bullets.append(bullet_text)
+    return bullets
 
-def extract_text_from_children(children):
+def get_bullets_from_ast(ast_node):
+    bullets = []
+    for node in ast_node:
+        if node["type"] == "list":
+            for item in node["children"]:
+                bullet_text = flatten_ast_as_text(child.get("children",[]))
+                if bullet_text:
+                    bullets.append(bullet_text)
+    return bullets
+"""
+
+def flatten_ast_as_text(children):
     parts = []
     for child in children:
-        if child["type"] == "text":
-            parts.append(child.get("raw", child.get("text", "")))
-        elif child["type"] == "link":
-            label = extract_text_from_children(child.get("children", []))
-            url = child.get("attrs")['url']
+        ctype = child.get("type")
+        if ctype == "text":
+            parts.append(child.get("raw", child.get("text", "")).strip())
+        elif ctype == "link":
+            label = flatten_ast_as_text(child.get("children", []))
+            url = child.get("attrs", {}).get("url", "")
             parts.append(f"{label} ({url})")
-        elif child["type"] in ("paragraph", "block_text", "list_item"):
-            parts.append(extract_text_from_children(child.get("children", [])))
+        elif ctype in ("paragraph", "block_text", "list_item", "strong", "emphasis"):
+            inner = flatten_ast_as_text(child.get("children", []))
+            parts.append(inner)
+        elif "children" in child:
+            parts.append(flatten_ast_as_text(child["children"]))
     return " ".join(parts).strip()
 
 if __name__ == "__main__":
