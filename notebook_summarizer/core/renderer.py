@@ -18,8 +18,9 @@ from notebook_summarizer.core.models import ParsedCell
 
 class PowerPointRenderer:
 
-    def __init__(self, output_path: Path | None = None):
+    def __init__(self, output_path: Path | None = None, include_speaker_notes: bool = True):
         self.output_path = output_path
+        self.include_speaker_notes = include_speaker_notes
         self.prs = Presentation()
         self._set_default_layout()
 
@@ -113,8 +114,9 @@ class PowerPointRenderer:
         # 4: Write tables
         self._render_tables(slide, parsed_content)
 
-        # 5: Write speaker notes
-        self._write_speaker_notes(slide, parsed_content)
+        # 5: Write speaker notes, if enabled
+        if self.include_speaker_notes:
+            self._write_speaker_notes(slide, parsed_content)
             
 
     def _render_bullets(self, slide, parsed_content):
@@ -208,9 +210,20 @@ class PowerPointRenderer:
             df = pd.DataFrame(table_data_list)
 
             df.to_excel(xlsx_path, index=False)
-
+    
     def _write_speaker_notes(self,slide,parsed_content):
-        print("Implement!!")
+        
+        if not parsed_content.paragraphs:
+            return # Don't create a notest slide unless there's something to write
+        
+        notes_slide = slide.notes_slide
+        text_frame = notes_slide.notes_text_frame
+
+
+        for para in parsed_content.paragraphs:
+            p = text_frame.add_paragraph()
+            p.text = para
+
 
 if __name__ == "__main__":
     import argparse
@@ -219,10 +232,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Render notebook to PowerPoint")
     parser.add_argument("input_json", type=Path, help="Path to parsed notebook JSON")
     parser.add_argument("output_pptx", type=Path, help="Path to output PowerPoint file")
+    parser.add_argument("--no-speaker-notes", action="store_true", help="Disable speaker notes")
     args = parser.parse_args()
 
     with open(args.input_json, "r", encoding="utf-8") as f:
-        parsed_notebook = json.load(f)
+        raw_data = json.load(f)
 
-    renderer = PowerPointRenderer(args.output_pptx)
-    renderer.render_presentation(parsed_notebook)
+    raw_data["cells"] = [ParsedCell(**cell) for cell in raw_data["cells"]]
+
+    renderer = PowerPointRenderer(args.output_pptx, include_speaker_notes=not args.no_speaker_notes)
+    renderer.render_presentation(raw_data)
