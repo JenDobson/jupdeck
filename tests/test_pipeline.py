@@ -17,7 +17,7 @@ def test_can_render_slide_from_markdown(tmp_path):
     assert len(prs.slides) == 1
     assert "Slide Title" in prs.slides[0].shapes.title.text
 
-"""
+"""  Removing since not currently supported
 def test_can_render_slide_from_code_cell(tmp_path):
     cell = new_code_cell("x = 1 + 1")
     cell["outputs"] = []
