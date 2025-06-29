@@ -44,9 +44,9 @@ poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
 
 ## Roadmap
 
-## Notebook Summarizer MVP Roadmap
+## JupDeck Roadmap
 
-This roadmap outlines the phased development plan for the Notebook Summarizer tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
+This roadmap outlines the phased development plan for the JupDeck tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
 
 ### 1: Baseline Slide Generator
 
