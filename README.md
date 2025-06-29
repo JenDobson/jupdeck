@@ -1,17 +1,17 @@
+# 📘 JupDeck
 
-# 📘 Notebook Summarizer
-
-**Convert Jupyter notebooks into clean, client-friendly PowerPoint presentations — automatically.**
+**Convert Jupyter notebooks to Presentation-Ready Slide Decks.**
 
 ---
 
-## 🚀 What It Does
+## What It Does
 
 This tool transforms `.ipynb` notebooks into structured `.pptx` presentations.
 
-- 📄 **Markdown cells** become slides with formatted text
-- 🧠 **Code cells** appear as readable blocks (graphics support coming soon)
-- 📊 **Output cells** will soon be replaced with charts and images
+- **Markdown Headers** convert to titles for new slides.
+- **Markdown Bullets** convert to slide bullets.
+- **Code Cell Outputs** convert to graphics on the slide.
+- **Markdown Text** converts to speaker notes.
 
 Ideal for:
 - Technical consultants
@@ -21,20 +21,12 @@ Ideal for:
 
 ---
 
-## 📸 Example Output
-
-```
-notebook.ipynb  →  notebook_summary.pptx
-```
-
-Slides are created 1:1 with each notebook cell:
-- Markdown → Slide title & bullets
-- Code → Slide body (or image preview, coming soon)
-- Outputs → (Planned: embedded figures or tables)
+## Example Output
+<show images here>
 
 ---
 
-## ⚙️ How to Use It
+## How to Use It
 
 1. Clone the repo and install dependencies:
 
@@ -50,58 +42,81 @@ poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
 
 ---
 
-## 🛣️ Roadmap
+## Roadmap
 
 ## Notebook Summarizer MVP Roadmap
 
 This roadmap outlines the phased development plan for the Notebook Summarizer tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
 
-### MVP-1: Core Technology Proof (Est. 56 hrs)
+### 1: Baseline Slide Generator
 
-**Goal**: Prove core functionality—parse notebooks, summarize code, and render a working PowerPoint output with embedded graphics.
+**Goal**: Prove core functionality: parse notebooks and render working PowerPoint output with embedded graphics.
 
 **Features**:
-- [x] Parse notebook structure and outputs (code, markdown, output cells)
+- [x] Parse notebook markdown structure and code cell outputs
 - [x] Generate PowerPoint slide decks (`.pptx`)
-- [x] Embed output graphics (e.g., plots, images) into slides
-- [ ] Embed output tables into slides
-- [ ] Summarize code cells using LLM into bullet points
-- [ ] Store basic notebook-level metadata (author, kernel, timestamps)
-- [ ] (Optional) Export to PDF via PowerPoint
+- [x] Embed output graphics (e.g., plots, images, tables) into slides with generic/simple formatting
+- [ ] PyPI and GitHub releases with versioning
+
+**Notes**:
+"User in the loop" for clean up of formated slides necessary
 
 ---
+### 2:  Notebook Slide Directives
 
-### MVP-2: Differentiation Layer (Est. 60 hrs)
-
-**Goal**: Add features that differentiate the product from notebook-to-slide tools like Mercury, RISE, and Quarto.
+**Goal**: Interpret slide layout directives from Jupyter notebooks
 
 **Features**:
-- [ ] Templated intro/outro slides (e.g., executive summary, conclusions)
-- [ ] Slide layout/styling themes (corporate, academic, dark mode)
-- [ ] Slide format validation (e.g., image resolution, text overflow)
-- [ ] Normalize parsed output schema for chatbot-ready indexing
-- [ ] Export speaker notes as script/briefing document
-- [ ] UX toggle: “executive mode” (hide raw code, emphasize presentation)
+- [] Rudimentary directives can be embedded as html-comments in markdown cells
+- [] Directives control simple formatting, e.g. "New Slide", "Hide Tables"
 
 ---
+### 3: Improved Layouts
 
-### MVP-Pro: Polish & Scale (Est. 70 hrs)
-
-**Goal**: Add polish, user experience enhancements, and early ecosystem integrations to support broader adoption and reusability.
+**Goal**: Automatically Adapt Slide Layouts
 
 **Features**:
-- [ ] Optional voiceover notes per slide (text-to-speech or speaker script sync)
-- [ ] Themed animations and transitions (PowerPoint-level polish)
-- [ ] Automated metrics (slide count, section coverage, etc.)
-- [ ] Drag-and-drop custom slide ordering (UI or slide map file)
-- [ ] Preset corporate themes (e.g., with logo, custom footer, fonts)
-- [ ] Export leads to CRM or newsletter integration
+- [] 3 different content slide layouts offered plus intro / ending layouts
+- [] Layout rules encoded in reusable config file
+- [] During slide rendering, best layout for slide chosen based on contents
+- [] Format validation during rendering (e.g. image resolution, text overflow)
+
+---
+### 4: Custom Theming and Templates
+**Goal**: Use Custom Styling Templates and Themes
+
+**Features**:
+- [] Choose between 3 custom styling templates (e.g. dark mode, corporate, academic)
+- [] Add user-defined templates
+
+---
+### 5: Custom Content Filtering
+**Goal**: Generate different decks depending on audience
+
+**Features**:
+- [] Directives mark content for different rendering scenarios (e.g. technical vs. non-technical, internal vs. external)  
+- [] Command-line flag controls rendering scenario and generates appropriate deck (e.g. `jupdeck input.ipynb --theme internal --no-code`)
+- [] Reusable configuration profiles (YAML) 
+---
+### 6: VS Code Plugin
+**Goal**: Notebook rendering from VS Code
+- [] Plugin allows notebook rendering from VS Code interface
+- [] Plugin provides suggestions during notebook editing
 
 ---
 
-**Total Estimated Time**: ~186 hrs across all phases  
-**Cadence**: ~15 hrs/week over 3–4 months
+### 7: Basic LLM Editing Support
+
+**Goal**: Use LLMs for editing support
+**Features**:
+- [] Optional LLM summarization for long markdown blocks
+- [] Optional LLM rewrites to match tone given audience
 ---
+### 8: LLM Slide Enhancement
+- [] Integrate conversational interface to notebook
+- [] Auto-suggest slide titles and bullets from raw code/markdown
+- [] LLM-based content validation: "This model seems to be overfit", "This chart does not support the title claim"
+
 
 ## 💡 Why?
 
