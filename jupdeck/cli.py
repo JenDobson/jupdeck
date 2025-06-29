@@ -15,19 +15,16 @@ def main():
     parser_arg.add_argument("--no-speaker-notes", action="store_true", help="Exclude speaker notes from slides")
     args = parser_arg.parse_args()
 
-    notebook_path = args.notebook
-    output_path = args.output
-
     # Parse the notebook
-    parsed = parser.parse_notebook(notebook_path)
+    parsed = parser.parse_notebook(args.notebook)
 
     # Render to PowerPoint
     ppt_renderer = renderer.PowerPointRenderer(
-        output_path = output_path,
+        output_path = args.output,
         include_speaker_notes = not args.no_speaker_notes)
     ppt_renderer.render_presentation(parsed)
 
-    print(f"✅ Report generated: {output_path}")
+    print(f"✅ Report generated: {args.output}")
 
 
 if __name__ == "__main__":
