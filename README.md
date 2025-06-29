@@ -109,13 +109,21 @@ This roadmap outlines the phased development plan for the Notebook Summarizer to
 
 **Goal**: Use LLMs for editing support
 **Features**:
-- [] Optional LLM summarization for long markdown blocks
-- [] Optional LLM rewrites to match tone given audience
+- [] Summarize markdown into concise, audience-appropriate bullets
+- [] Align slide tone with target audience (e.g. "executive-friendly", "technical peer review")
 ---
 ### 8: LLM Slide Enhancement
 - [] Integrate conversational interface to notebook
 - [] Auto-suggest slide titles and bullets from raw code/markdown
-- [] LLM-based content validation: "This model seems to be overfit", "This chart does not support the title claim"
+- [] Validate presentation claims against content: "This model seems to be overfit", "This chart does not support the title claim"
+---
+### 9: Team Collaboration & Workflow Integration
+
+**Goal**: Support real-world enterprise workflows
+
+- [] GitHub Actions to auto-render slides from notebooks on PR merge
+- [] Enable shared template libraries across teams
+- [] Add comments/annotations for reviewer workflows
 
 
 ## 💡 Why?
