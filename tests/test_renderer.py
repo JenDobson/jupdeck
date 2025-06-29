@@ -124,7 +124,6 @@ def test_render_large_table_with_link(tmp_path):
 
 
 def test_render_raises_type_error_on_invalid_input(tmp_path):
-    from notebook_summarizer.core.renderer import PowerPointRenderer
 
     output_file = tmp_path / "invalid_input.pptx"
     renderer = PowerPointRenderer(output_file)
@@ -134,3 +133,57 @@ def test_render_raises_type_error_on_invalid_input(tmp_path):
 
     with pytest.raises(TypeError, match="ParsedCell"):
         renderer.render_slides([legacy_dict])  # This should raise
+
+
+def test_write_speaker_notes(tmp_path):
+
+    output_path = tmp_path / "test_notex.pptx"
+    renderer = PowerPointRenderer(output_path)
+
+    cell = ParsedCell(
+        type="markdown",
+        title="Sample Slide",
+        paragraphs=["This is a note."],
+        bullets=[],
+        code=None,
+        images=[],
+        table=None,
+        raw_outputs=None,
+        metadata={}
+    )
+
+    renderer.render_slides([cell])
+
+    # Reopen and check the notes
+    prs = Presentation(output_path)
+    slide = prs.slides[0]
+    notes_slide = slide.notes_slide
+    notes_text = notes_slide.notes_text_frame.text
+    assert "This is a note." in notes_text
+
+
+
+# Test that speaker notes are NOT added when include_speaker_notes=False
+def test_no_speaker_notes_when_disabled(tmp_path):
+    output_path = tmp_path / "no_notes.pptx"
+    renderer = PowerPointRenderer(output_path, include_speaker_notes=False)
+
+    cell = ParsedCell(
+        type="markdown",
+        title="Slide without notes",
+        paragraphs=["This is a paragraph that would be a note."],
+        bullets=[],
+        code=None,
+        images=[],
+        table=None,
+        raw_outputs=None,
+        metadata={}
+    )
+
+    renderer.render_slides([cell])
+
+    prs = Presentation(output_path)
+    slide = prs.slides[0]
+
+    # Ensure the slide either has no notes_slide or that notes_text_frame is empty
+    assert not hasattr(slide, "notes_slide") or not slide.notes_slide.notes_text_frame.text.strip()
