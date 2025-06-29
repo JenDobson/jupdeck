@@ -4,7 +4,7 @@
 import argparse
 from pathlib import Path
 
-from notebook_summarizer.core import parser, renderer
+from jupdeck.core import parser, renderer
 
 
 def main():

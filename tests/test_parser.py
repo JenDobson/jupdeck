@@ -2,8 +2,8 @@ import nbformat
 import pytest
 from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
-from notebook_summarizer.core import parser
-from notebook_summarizer.core.models import ParsedCell
+from jupdeck.core import parser
+from jupdeck.core.models import ParsedCell
 
 
 @pytest.fixture

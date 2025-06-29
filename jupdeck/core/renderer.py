@@ -13,7 +13,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Inches, Pt
 
-from notebook_summarizer.core.models import ParsedCell
+from jupdeck.core.models import ParsedCell
 
 
 class PowerPointRenderer:

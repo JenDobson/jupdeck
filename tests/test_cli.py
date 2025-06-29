@@ -31,7 +31,7 @@ def test_cli_creates_pptx(tmp_path):
     input_file.write_text(json.dumps(input_data))
 
     subprocess.run(
-        ["python", "notebook_summarizer/core/renderer.py", str(input_file), str(output_file)],
+        ["python", "jupdeck/core/renderer.py", str(input_file), str(output_file)],
         check=True,
     )
 
@@ -62,7 +62,7 @@ def test_cli_no_speaker_notes(tmp_path):
     input_file.write_text(json.dumps(input_data))
 
     subprocess.run(
-        ["python", "notebook_summarizer/core/renderer.py", str(input_file), str(output_file), "--no-speaker-notes"],
+        ["python", "jupdeck/core/renderer.py", str(input_file), str(output_file), "--no-speaker-notes"],
         check=True,
     )
 

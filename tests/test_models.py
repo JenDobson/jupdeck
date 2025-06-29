@@ -1,4 +1,4 @@
-from notebook_summarizer.core.models import ImageData, ParsedCell
+from jupdeck.core.models import ImageData, ParsedCell
 
 
 def test_merge_cells_combines_all_fields():

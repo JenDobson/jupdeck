@@ -9,7 +9,7 @@ import mistune
 import nbformat
 import pandas as pd
 
-from notebook_summarizer.core.models import ImageData, ParsedCell
+from jupdeck.core.models import ImageData, ParsedCell
 
 
 def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:

@@ -2,8 +2,8 @@ import pytest
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from notebook_summarizer.core.models import ImageData, ParsedCell
-from notebook_summarizer.core.renderer import PowerPointRenderer
+from jupdeck.core.models import ImageData, ParsedCell
+from jupdeck.core.renderer import PowerPointRenderer
 
 
 def test_render_markdown_slide(tmp_path):

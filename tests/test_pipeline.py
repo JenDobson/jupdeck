@@ -1,8 +1,8 @@
 from nbformat.v4 import new_markdown_cell
 from pptx import Presentation
 
-from notebook_summarizer.core.parser import parse_markdown_cell
-from notebook_summarizer.core.renderer import PowerPointRenderer
+from jupdeck.core.parser import parse_markdown_cell
+from jupdeck.core.renderer import PowerPointRenderer
 
 
 def test_can_render_slide_from_markdown(tmp_path):
