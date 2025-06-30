@@ -92,6 +92,39 @@ class TestNotebookOutputParsing:
         assert parsed_cell.images[0].mime_type == "image/png"
         assert parsed_cell.images[0].data == minimal_png
 
+    def test_parse_notebook_with_multiple_image_outputs(self, make_notebook):
+        # Minimal base64-encoded PNG (1x1 black pixel)
+        minimal_png1 = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgYA"
+            "AAAAMAAWgmWQ0AAAAASUVORK5CYII="
+        )
+        minimal_png2 = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAADUlEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
+        )
+        minimal_png3 = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAACZgbYfAAAADUlEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
+        )
+        cell = new_code_cell(
+            source="plt.plot(x, y)",
+            execution_count=1,
+            outputs=[
+                {"output_type": "display_data", "data": {"image/png": minimal_png1}, "metadata": {}},
+                {"output_type": "display_data", "data": {"image/png": minimal_png2}, "metadata": {}},
+                {"output_type": "display_data", "data": {"image/png": minimal_png3}, "metadata": {}},
+            ],
+        )
+        nb_content = new_notebook(cells=[cell])
+        path = make_notebook(nb_content, "multiple_image_output_notebook.ipynb")
+        result = parser.parse_notebook(path)
+        parsed_cell = result["cells"][0]
+
+        assert parsed_cell.type == "code"
+        assert parsed_cell.images
+        assert len(parsed_cell.images) == 3
+        assert parsed_cell.images[0].data == minimal_png1
+        assert parsed_cell.images[1].data == minimal_png2
+        assert parsed_cell.images[2].data == minimal_png3
+
     def test_parser_extracts_table_from_html_output(self, make_notebook):
         # Simulate pandas DataFrame HTML output
         html_table = """
@@ -137,6 +170,24 @@ class TestNotebookMarkdownParsing:
         assert parsed_cell.type == "markdown"
         assert "Heading Line 1" in parsed_cell.title
         assert "More text on line 2" in parsed_cell.paragraphs[0]
+
+    def test_parse_markdown_cell_with_image(self, make_notebook):
+        md_text = """# Results
+
+Here is a summary plot:
+
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=)
+"""
+        cell = new_markdown_cell(source=md_text)
+        nb_content = new_notebook(cells=[cell])
+        path = make_notebook(nb_content, "markdown_image_notebook.ipynb")
+        result = parser.parse_notebook(path)
+        parsed_cell = result["cells"][0]
+
+        assert parsed_cell.type == "markdown"
+        assert parsed_cell.title == "Results"
+        assert parsed_cell.images
+        assert parsed_cell.images[0].mime_type == "image/png"
 
 
 class TestCellParsing:

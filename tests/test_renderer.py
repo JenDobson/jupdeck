@@ -187,3 +187,36 @@ def test_no_speaker_notes_when_disabled(tmp_path):
 
     # Ensure the slide either has no notes_slide or that notes_text_frame is empty
     assert not hasattr(slide, "notes_slide") or not slide.notes_slide.notes_text_frame.text.strip()
+
+
+# Test rendering a slide with multiple images
+def test_render_multiple_images_on_slide(tmp_path):
+    minimal_png = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+        "AAAAC0lEQVR42mP8/x8AAwMCAO+XZhEAAAAASUVORK5CYII="
+    )
+
+    images = [
+        ImageData(mime_type="image/png", data=minimal_png),
+        ImageData(mime_type="image/png", data=minimal_png),
+        ImageData(mime_type="image/png", data=minimal_png)
+    ]
+
+    parsed_cells = [
+        ParsedCell(
+            type="code",
+            title="Slide with multiple images",
+            code="plt.plot(x, y)",
+            images=images
+        )
+    ]
+
+    output_file = tmp_path / "multi_image_slide.pptx"
+    renderer = PowerPointRenderer(output_file)
+    renderer.render_slides(parsed_cells)
+
+    prs = Presentation(output_file)
+    slide = prs.slides[0]
+
+    pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 3, f"Expected 3 images, found {len(pictures)}"

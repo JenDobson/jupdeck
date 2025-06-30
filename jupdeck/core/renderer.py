@@ -145,19 +145,24 @@ class PowerPointRenderer:
 
         images = parsed_content.images
 
-        left = Inches(1)
+        left = Inches(0.5)
         top = Inches(4)
-        width = Inches(5)
+        width = Inches(4)
         height = Inches(3)
 
-        for image in images:
+        for idx, image in enumerate(images):
             if image.mime_type == "image/png" and image.data:
                 image_data = base64.b64decode(image.data)
                 image_stream = io.BytesIO(image_data)
                 slide.shapes.add_picture(
                     image_stream, left, top, width=width, height=height
                 )
-                left = left + Inches(3)  # Move right for next image
+
+                if idx==0:
+                    left = left + Inches(5.0)  # Move right for next image
+                else:
+                    left = left + Inches(0.5)
+                    top = top + Inches(0.5)
 
     def _render_tables(self, slide, parsed_content):
 
