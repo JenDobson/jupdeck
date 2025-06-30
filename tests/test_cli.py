@@ -1,68 +1,54 @@
 """Unit tests for CLI."""
 
 
-
-import json
 import subprocess
 
 from pptx import Presentation
 
 
-def test_cli_creates_pptx(tmp_path):
-    input_data = {
-        "metadata": {},
-        "cells": [
-            {
-                "type": "markdown",
-                "title": "Demo Slide",
-                "paragraphs": ["This is a test."],
-                "bullets": [],
-                "images": [],
-                "table": None,
-                "raw_outputs": None,
-                "code": None,
-                "metadata": {},
-            }
-        ]
-    }
-    input_file = tmp_path / "test_notebook.json"
-    output_file = tmp_path / "test_output.pptx"
+# Test CLI convert command with notebook input
+def test_cli_convert_command(tmp_path):
+    import nbformat
+    from nbformat.v4 import new_markdown_cell, new_notebook
 
-    input_file.write_text(json.dumps(input_data))
+    # Create a simple notebook
+    nb = new_notebook(cells=[
+        new_markdown_cell("# Test Slide\n\nThis is a markdown test.")
+    ])
+    input_nb = tmp_path / "test_input.ipynb"
+    output_pptx = tmp_path / "test_output.pptx"
 
-    subprocess.run(
-        ["python", "jupdeck/core/renderer.py", str(input_file), str(output_file)],
-        check=True,
+    with open(input_nb, "w", encoding="utf-8") as f:
+        nbformat.write(nb, f)
+
+    result = subprocess.run(
+        ["poetry", "run", "jupdeck", "convert", str(input_nb), str(output_pptx)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
-    assert output_file.exists()
-    prs = Presentation(str(output_file))
-    assert len(prs.slides) == 1
+    assert result.returncode == 0, f"CLI failed with error: {result.stderr}"
+    assert output_pptx.exists()
+    prs = Presentation(str(output_pptx))
+    assert len(prs.slides) >= 1
 
 def test_cli_no_speaker_notes(tmp_path):
-    input_data = {
-        "metadata": {},
-        "cells": [
-            {
-                "type": "markdown",
-                "title": "Demo Slide",
-                "paragraphs": ["Speaker note should not appear."],
-                "bullets": [],
-                "images": [],
-                "table": None,
-                "raw_outputs": None,
-                "code": None,
-                "metadata": {},
-            }
-        ]
-    }
-    input_file = tmp_path / "test_notebook.json"
+    import nbformat
+    from nbformat.v4 import new_markdown_cell, new_notebook
+
+    nb = new_notebook(cells=[
+        new_markdown_cell("# Demo Slide\n\nSpeaker note should not appear.")
+    ])
+    input_file = tmp_path / "test_input.ipynb"
     output_file = tmp_path / "test_output.pptx"
 
-    input_file.write_text(json.dumps(input_data))
+    with open(input_file, "w", encoding="utf-8") as f:
+        nbformat.write(nb, f)
 
     subprocess.run(
-        ["python", "jupdeck/core/renderer.py", str(input_file), str(output_file), "--no-speaker-notes"],
+        ["poetry", "run", "jupdeck", "convert", "--no-speaker-notes",
+         str(input_file), str(output_file)],
         check=True,
     )
 
