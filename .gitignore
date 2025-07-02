@@ -5,3 +5,4 @@ __pycache__/
 *.ipynb_checkpoints
 outputs/
 !outputs/demo.pptx
+.DS_Store
