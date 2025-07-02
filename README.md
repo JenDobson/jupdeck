@@ -2,51 +2,37 @@
 
 **Convert Jupyter notebooks to Presentation-Ready Slide Decks.**
 
+Ideal for:
+- Technical consultants
+- Data scientists
+- Instructors
+- Teams presenting notebook work to non-technical stakeholders
 ---
 
 ## What It Does
 
 This tool transforms `.ipynb` notebooks into structured `.pptx` presentations.
 
-- **Markdown Headers** convert to titles for new slides.
-- **Markdown Bullets** convert to slide bullets.
-- **Code Cell Outputs** convert to graphics on the slide.
-- **Markdown Text** converts to speaker notes.
-
-Ideal for:
-- Technical consultants
-- Data scientists
-- Instructors
-- Teams presenting notebook work to non-technical stakeholders
+- **Markdown Headers** become slide titles
+- **Markdown Bullets** become slide bullets.
+- **Plots and Tables** become slide graphics.
+- **Markdown Text** becomes speaker notes.
 
 ---
 
-## Example Output
-<show images here>
+## Quick Start
 
+Pip install the package:
+`pip install jupdeck`
+
+Convert a notebook to slides:
+`jupdeck convert examples/data/jupdeck_overview.ipyng outputs/output.pptx`
 ---
 
-## How to Use It
 
-1. Clone the repo and install dependencies:
+## JupDeck Roadmap
 
-```bash
-poetry install --with dev
-```
-
-2. Run the end-to-end tool:
-
-```bash
-poetry run python scripts/build_report.py path/to/notebook.ipynb output.pptx
-```
-
----
-
-## Roadmap
-
-## Notebook Summarizer MVP Roadmap
-
-This roadmap outlines the phased development plan for the Notebook Summarizer tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
+This roadmap outlines the phased development plan for the JupDeck tool. The goal is to build a system that transforms Jupyter Notebooks into professional PowerPoint presentations, supporting data science reporting, executive summaries, and technical documentation.
 
 ### 1: Baseline Slide Generator
 
@@ -143,4 +129,4 @@ poetry run pre-commit run --all-files  # Run linters and formatters
 
 ## 📄 License
 
-MIT License — you are free to use, share, and modify. (See `LICENSE` file)
+Apache License 2.0 — permissive for personal, educational, and commercial use. (See `LICENSE` file)

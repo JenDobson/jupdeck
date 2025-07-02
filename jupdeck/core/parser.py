@@ -9,7 +9,7 @@ import mistune
 import nbformat
 import pandas as pd
 
-from notebook_summarizer.core.models import ImageData, ParsedCell
+from jupdeck.core.models import ImageData, ParsedCell
 
 
 def load_notebook(notebook_path: Path) -> nbformat.NotebookNode:
@@ -79,26 +79,39 @@ def parse_markdown_cell(cell) -> ParsedCell:
     title = None
     bullets = []
     paragraphs = []
+    images = []
 
     for node in ast:
         if node["type"] == "heading" and node.get("attrs",{}).get("level") == 1 and not title:
             # Grab first H1 as title
             title = flatten_ast_as_text(node.get("children", []))
         elif node["type"] == "heading" and node.get("attrs",{}).get("level") != 1:
-            # Grab first H1 as title
             paragraphs.append(flatten_ast_as_text(node.get("children", [])))
         elif node["type"] == "paragraph":
+            for child in node.get("children", []):
+                if child["type"] == "image":
+                    url = child.get("attrs", {}).get("url", "")
+                    if url and url.startswith("data:image/"):
+                        try:
+                            header, bytestring = url.split(",", 1)
+                            images.append(
+                                ImageData(mime_type="image/png", 
+                                          data=bytestring))
+                        except Exception:
+                            pass  # skip images that cannot be decoded
             paragraphs.append(flatten_ast_as_text(node.get("children", [])))
         elif node["type"] == "list":
             for item in node.get("children", []):
                 if item["type"] == "list_item":
                     bullets.append(flatten_ast_as_text(item.get("children", [])))
+        
 
     return ParsedCell(
         type="markdown",
         title=title,
         bullets=bullets,
-        paragraphs=paragraphs
+        paragraphs=paragraphs,
+        images=images
     )
 
 def flatten_ast_as_text(children):

@@ -2,8 +2,8 @@ import pytest
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from notebook_summarizer.core.models import ImageData, ParsedCell
-from notebook_summarizer.core.renderer import PowerPointRenderer
+from jupdeck.core.models import ImageData, ParsedCell
+from jupdeck.core.renderer import PowerPointRenderer
 
 
 def test_render_markdown_slide(tmp_path):
@@ -187,3 +187,68 @@ def test_no_speaker_notes_when_disabled(tmp_path):
 
     # Ensure the slide either has no notes_slide or that notes_text_frame is empty
     assert not hasattr(slide, "notes_slide") or not slide.notes_slide.notes_text_frame.text.strip()
+
+
+# Test rendering a slide with multiple images
+def test_render_multiple_images_on_slide(tmp_path):
+    minimal_png = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+        "AAAAC0lEQVR42mP8/x8AAwMCAO+XZhEAAAAASUVORK5CYII="
+    )
+
+    images = [
+        ImageData(mime_type="image/png", data=minimal_png),
+        ImageData(mime_type="image/png", data=minimal_png),
+        ImageData(mime_type="image/png", data=minimal_png)
+    ]
+
+    parsed_cells = [
+        ParsedCell(
+            type="code",
+            title="Slide with multiple images",
+            code="plt.plot(x, y)",
+            images=images
+        )
+    ]
+
+    output_file = tmp_path / "multi_image_slide.pptx"
+    renderer = PowerPointRenderer(output_file)
+    renderer.render_slides(parsed_cells)
+
+    prs = Presentation(output_file)
+    slide = prs.slides[0]
+
+    pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 3, f"Expected 3 images, found {len(pictures)}"
+
+def test_can_render_presentation(tmp_path):
+    minimal_png = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+        "AAAAC0lEQVR42mP8/x8AAwMCAO+XZhEAAAAASUVORK5CYII="
+    )
+
+    cell = ParsedCell(
+        type="markdown",
+        title="Slide with image",
+        bullets=["First point", "Second point"],
+        images=[ImageData(mime_type="image/png", data=minimal_png)],
+        paragraphs=["Speaker note content."]
+    )
+
+    input_path = tmp_path / "fake_input.ipynb"
+    input_path.write_text("dummy notebook content")  # simulate existence
+
+    output_path = tmp_path / "presentation.pptx"
+    renderer = PowerPointRenderer(
+        output_path=output_path,
+        include_speaker_notes=True,
+        include_attribution=True,
+        input_path=input_path
+    )
+
+    parsed_notebook = {"metadata": {}, "cells": [cell]}
+    renderer.render_presentation(parsed_notebook)
+
+    prs = Presentation(output_path)
+    assert len(prs.slides) == 2
+    assert output_path.exists()
