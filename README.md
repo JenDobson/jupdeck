@@ -26,7 +26,9 @@ Pip install the package:
 `pip install jupdeck`
 
 Convert a notebook to slides:
+
 `jupdeck convert examples/data/jupdeck_overview.ipyng outputs/output.pptx`
+
 ---
 
 
