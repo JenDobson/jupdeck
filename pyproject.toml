@@ -5,6 +5,7 @@
 name = "jupdeck"
 version = "0.1.0"
 description = "Create Audience-Ready Presentations from Jupyter Notebooks"
+license = "Apache-2.0"
 authors = ["Jen Dobson <jendobson@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "jupdeck" }]
