@@ -56,3 +56,29 @@ def test_cli_no_speaker_notes(tmp_path):
     prs = Presentation(str(output_file))
     notes_text = prs.slides[0].notes_slide.notes_text_frame.text
     assert "Speaker note should not appear." not in notes_text
+
+def test_cli_no_attribution(tmp_path):
+    import nbformat
+    from nbformat.v4 import new_markdown_cell, new_notebook
+
+    nb = new_notebook(cells=[
+        new_markdown_cell("# Slide Content\n\nThis is a slide without attribution.")
+    ])
+    input_file = tmp_path / "test_input.ipynb"
+    output_file = tmp_path / "test_output.pptx"
+
+    with open(input_file, "w", encoding="utf-8") as f:
+        nbformat.write(nb, f)
+
+    subprocess.run(
+        ["poetry", "run", "jupdeck", "convert", "--no-attribution",
+         str(input_file), str(output_file)],
+        check=True,
+    )
+
+    from pptx import Presentation
+    prs = Presentation(str(output_file))
+    # Check that the last slide does not contain attribution text
+    last_slide = prs.slides[-1]
+    text = "\n".join(shape.text for shape in last_slide.shapes if hasattr(shape, "text"))
+    assert "automatically created using JupDeck" not in text

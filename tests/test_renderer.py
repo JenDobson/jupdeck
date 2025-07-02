@@ -220,3 +220,35 @@ def test_render_multiple_images_on_slide(tmp_path):
 
     pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
     assert len(pictures) == 3, f"Expected 3 images, found {len(pictures)}"
+
+def test_can_render_presentation(tmp_path):
+    minimal_png = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+        "AAAAC0lEQVR42mP8/x8AAwMCAO+XZhEAAAAASUVORK5CYII="
+    )
+
+    cell = ParsedCell(
+        type="markdown",
+        title="Slide with image",
+        bullets=["First point", "Second point"],
+        images=[ImageData(mime_type="image/png", data=minimal_png)],
+        paragraphs=["Speaker note content."]
+    )
+
+    input_path = tmp_path / "fake_input.ipynb"
+    input_path.write_text("dummy notebook content")  # simulate existence
+
+    output_path = tmp_path / "presentation.pptx"
+    renderer = PowerPointRenderer(
+        output_path=output_path,
+        include_speaker_notes=True,
+        include_attribution=True,
+        input_path=input_path
+    )
+
+    parsed_notebook = {"metadata": {}, "cells": [cell]}
+    renderer.render_presentation(parsed_notebook)
+
+    prs = Presentation(output_path)
+    assert len(prs.slides) == 2
+    assert output_path.exists()

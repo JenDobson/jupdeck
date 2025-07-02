@@ -16,6 +16,7 @@ def main():
     convert_parser.add_argument("input", type=Path, help="Path to input notebook (.ipynb)")
     convert_parser.add_argument("output", type=Path, help="Path to output PowerPoint file (.pptx)")
     convert_parser.add_argument("--no-speaker-notes", action="store_true", help="Exclude speaker notes from slides")
+    convert_parser.add_argument("--no-attribution", action="store_true", help="Exclude attribution from slides")
     
     args = parser_main.parse_args()
 
@@ -26,7 +27,9 @@ def main():
         # Render to PowerPoint
         ppt_renderer = renderer.PowerPointRenderer(
             output_path = args.output,
-            include_speaker_notes = not args.no_speaker_notes
+            include_speaker_notes = not args.no_speaker_notes,
+            include_attribution = not args.no_attribution,
+            input_path = args.input
             )
         ppt_renderer.render_presentation(parsed)
 

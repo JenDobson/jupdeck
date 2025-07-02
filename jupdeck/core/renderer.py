@@ -18,9 +18,17 @@ from jupdeck.core.models import ParsedCell
 
 class PowerPointRenderer:
 
-    def __init__(self, output_path: Path | None = None, include_speaker_notes: bool = True):
+    def __init__(
+        self,
+        output_path: Path | None = None,
+        include_speaker_notes: bool = True,
+        include_attribution: bool = True,
+        input_path: Path | None = None,
+    ):
         self.output_path = output_path
         self.include_speaker_notes = include_speaker_notes
+        self.include_attribution = include_attribution
+        self.input_path = input_path
         self.prs = Presentation()
         self._set_default_layout()
 
@@ -44,6 +52,23 @@ class PowerPointRenderer:
         slide_groups = self._merge_slide_groups(parsed_cells)
 
         self.render_slides(slide_groups)
+
+        if self.include_attribution:
+            slide = self.prs.slides.add_slide(self.slide_layout)
+            notebook_name = self.input_path.name if self.input_path else "a notebook"
+            attribution_text = f"This presentation was automatically created from {notebook_name} using JupDeck."
+            
+            textbox = slide.shapes.add_textbox(Inches(1), Inches(5), Inches(8), Inches(1))
+            text_frame = textbox.text_frame
+            p = text_frame.paragraphs[0]
+            p.text = attribution_text
+            p.font.size = Pt(14)
+            p.bullet = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(8), Inches(1))
+            text_frame = textbox.text_frame
+            p = text_frame.paragraphs[0]
+            p.text = attribution_text
+            p.font.size = Pt(24)
+            p.bullet = False
 
         if self.output_path:
             self.prs.save(self.output_path)
