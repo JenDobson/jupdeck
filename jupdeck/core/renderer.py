@@ -108,11 +108,12 @@ class PowerPointRenderer:
         # Type check: ensure cells is a list of ParsedCell instances
         if not isinstance(parsed_contents, list) or not \
             all(isinstance(parsed_content, ParsedCell) for parsed_content in parsed_contents):
+            element_types = [type(parsed_content).__name__ for parsed_content in parsed_contents
+                     ] if isinstance(parsed_contents, list) else 'N/A'
             raise TypeError(
                 f"cells must be a list of ParsedCell instances, got "
                 f"{type(parsed_contents).__name__} with element types: "
-                f"{[type(parsed_content).__name__ for parsed_content in parsed_contents
-                     ] if isinstance(parsed_contents, list) else 'N/A'}"
+                f"{element_types}"
             )
         
         for parsed_content in parsed_contents:
