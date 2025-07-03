@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [0.1.0] - 2025-07-01
 
 ### Added
+- GitHub Actions workflow file
+
+### Changed
+- Support increased to python >=3.10, <3.13
+
+### Removed
+- None
+
+## [0.1.0] - 2025-07-01
+
+### Added
 - Initial public release of JupDeck
 - CLI interface: `jupdeck convert input.ipynb output.pptx`
 - Support for Markdown and Code cells

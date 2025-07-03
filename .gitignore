@@ -6,3 +6,6 @@ __pycache__/
 outputs/
 !outputs/demo.pptx
 .DS_Store
+*.png
+*.whl
+*.tar.gz
