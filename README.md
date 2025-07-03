@@ -46,6 +46,12 @@ poetry run pre-commit run --all-files  # Run linters and formatters
 
 ---
 
+## Roadmap
+
+See the [JupDeck Roadmap](./ROADMAP.md) for upcoming features and ideas.
+
+---
+
 ## License
 
 Apache License 2.0 — permissive for personal, educational, and commercial use. (See `LICENSE` file)
