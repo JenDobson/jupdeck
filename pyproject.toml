@@ -3,7 +3,7 @@
 # ------------------------
 [tool.poetry]
 name = "jupdeck"
-version = "0.2.0"
+version = "0.1.1"
 description = "Create Audience-Ready Presentations from Jupyter Notebooks"
 license = "Apache-2.0"
 authors = ["Jen Dobson <jendobson@gmail.com>"]
