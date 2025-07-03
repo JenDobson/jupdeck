@@ -111,8 +111,7 @@ class PowerPointRenderer:
             raise TypeError(
                 f"cells must be a list of ParsedCell instances, got "
                 f"{type(parsed_contents).__name__} with element types: "
-                f"{
-                    [type(parsed_content).__name__ for parsed_content in parsed_contents
+                f"{[type(parsed_content).__name__ for parsed_content in parsed_contents
                      ] if isinstance(parsed_contents, list) else 'N/A'}"
             )
         
