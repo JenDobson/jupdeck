@@ -11,7 +11,7 @@ This roadmap outlines the phased development plan for the JupDeck tool. The goal
 - [x] Parse notebook markdown structure and code cell outputs
 - [x] Generate PowerPoint slide decks (`.pptx`)
 - [x] Embed output graphics (e.g., plots, images, tables) into slides with generic/simple formatting
-- [ ] PyPI and GitHub releases with versioning
+- [x] PyPI and GitHub releases with versioning
 
 **Notes**:
 "User in the loop" for clean up of formated slides necessary
